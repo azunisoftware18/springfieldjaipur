@@ -19,11 +19,11 @@
 //   const [page, setPage] = useState(1);
 //   const itemsPerPage = 7; // Changed to 7 per page
 //   const { data: ticketTypes = [] } = useTicketTypes(placeId);
-  
+
 //   // Filter states for download
 //   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
 //   const [currentFilteredData, setCurrentFilteredData] = useState([]);
-  
+
 //   const totalBookings = bookings?.length || 0;
 //   const today = new Date().toISOString().split("T")[0];
 
@@ -100,7 +100,7 @@
 //   // Excel download utility
 //   const downloadExcel = (data, filename) => {
 //     const ws = XLSX.utils.json_to_sheet(data);
-    
+
 //     // Set column widths
 //     const colWidths = [
 //       { wch: 8 },  // Sr. No
@@ -122,11 +122,11 @@
 
 //     const wb = XLSX.utils.book_new();
 //     XLSX.utils.book_append_sheet(wb, ws, "Bookings");
-    
+
 //     // Generate filename with timestamp
 //     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 //     XLSX.writeFile(wb, `${filename}_${timestamp}.xlsx`);
-    
+
 //     setShowDownloadOptions(false);
 //   };
 
@@ -147,7 +147,7 @@
 //               Manage all bookings and ticket activities.
 //             </p>
 //           </div>
-          
+
 //           {/* Download Button */}
 //           <div className="relative">
 //             <Button
@@ -155,12 +155,12 @@
 //               icon={Download}
 //               text="Download Excel"
 //               onClick={() => setShowDownloadOptions(!showDownloadOptions)}
-              
+
 //             >
 //               <Download className="w-4 h-4" />
 //               Download Excel
 //             </Button>
-            
+
 //             {/* Download Options Dropdown */}
 //             {showDownloadOptions && (
 //               <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-slate-200 z-50">
@@ -168,7 +168,7 @@
 //                   <h3 className="text-sm font-semibold text-slate-900">Download Options</h3>
 //                   <p className="text-xs text-slate-500 mt-1">Select what data you want to export</p>
 //                 </div>
-                
+
 //                 <div className="p-2">
 //                   <button
 //                     onClick={downloadCurrentPage}
@@ -188,7 +188,7 @@
 //                       </div>
 //                     </div>
 //                   </button>
-                  
+
 //                   {/* <button
 //                     onClick={downloadAllFiltered}
 //                     className="w-full text-left px-3 py-2.5 hover:bg-green-50 rounded-lg transition-colors group mt-1"
@@ -202,14 +202,14 @@
 //                           Download Filtered Data
 //                         </p>
 //                         <p className="text-xs text-slate-500">
-//                           {currentFilteredData.length > 0 
-//                             ? `Filtered: ${currentFilteredData.length} bookings` 
+//                           {currentFilteredData.length > 0
+//                             ? `Filtered: ${currentFilteredData.length} bookings`
 //                             : `All data: ${totalBookings} bookings`}
 //                         </p>
 //                       </div>
 //                     </div>
 //                   </button> */}
-                  
+
 //                   <button
 //                     onClick={downloadAllData}
 //                     className="w-full text-left px-3 py-2.5 hover:bg-purple-50 rounded-lg transition-colors group mt-1"
@@ -229,7 +229,7 @@
 //                     </div>
 //                   </button>
 //                 </div>
-                
+
 //                 <div className="p-2 border-t border-slate-100">
 //                   <button
 //                     onClick={() => setShowDownloadOptions(false)}
@@ -297,16 +297,9 @@
 //   );
 // }
 
-
-
 "use client";
 
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 
 import BookingTable from "@/components/table/BookingTable";
 import { useBookings } from "@/lib/queries/useBooking";
@@ -314,21 +307,17 @@ import StatCard from "@/components/common/StatCard";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useTicketTypes } from "@/lib/queries/useTicketType";
-import { Download, FileSpreadsheet } from "lucide-react";
+import { Download, FileSpreadsheet, PlusCircle } from "lucide-react";
 import * as XLSX from "xlsx";
 import Button from "@/components/ui/Button";
+import Link from "next/link";
 
 export default function Page() {
-  const currentPlace = useSelector(
-    (state) => state.place.currentPlace
-  );
+  const currentPlace = useSelector((state) => state.place.currentPlace);
 
   const placeId = currentPlace?.id;
 
-  const {
-    data: bookings,
-    isLoading,
-  } = useBookings();
+  const { data: bookings, isLoading } = useBookings();
 
   const router = useRouter();
 
@@ -336,26 +325,21 @@ export default function Page() {
 
   const itemsPerPage = 7;
 
-  const {
-    data: ticketTypes = [],
-  } = useTicketTypes(placeId);
+  const { data: ticketTypes = [] } = useTicketTypes(placeId);
 
   // =========================================================
   // DOWNLOAD STATE
   // =========================================================
 
-  const [showDownloadOptions, setShowDownloadOptions] =
-    useState(false);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
 
   // =========================================================
   // FILTERED DATA STATE
   // =========================================================
 
-  const [currentFilteredData, setCurrentFilteredData] =
-    useState([]);
+  const [currentFilteredData, setCurrentFilteredData] = useState([]);
 
-  const [hasActiveFilters, setHasActiveFilters] =
-    useState(false);
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
 
   // =========================================================
   // BOOKING STATS
@@ -363,15 +347,11 @@ export default function Page() {
 
   const totalBookings = bookings?.length || 0;
 
-  const today = new Date()
-    .toISOString()
-    .split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
 
   const todayBookings =
     bookings?.filter((booking) => {
-      const bookingDate = new Date(
-        booking.createdAt
-      )
+      const bookingDate = new Date(booking.createdAt)
         .toISOString()
         .split("T")[0];
 
@@ -381,8 +361,7 @@ export default function Page() {
   const successfulBookings =
     bookings?.filter(
       (booking) =>
-        booking.status === "PAID" ||
-        booking.paymentStatus === "PAID"
+        booking.status === "PAID" || booking.paymentStatus === "PAID",
     ).length || 0;
 
   // =========================================================
@@ -395,36 +374,25 @@ export default function Page() {
   //
   // =========================================================
 
-  const activeData = hasActiveFilters
-    ? currentFilteredData
-    : bookings || [];
+  const activeData = hasActiveFilters ? currentFilteredData : bookings || [];
 
   // =========================================================
   // TOTAL PAGES
   // =========================================================
 
-  const totalPages =
-    Math.ceil(
-      activeData.length / itemsPerPage
-    ) || 1;
+  const totalPages = Math.ceil(activeData.length / itemsPerPage) || 1;
 
   // =========================================================
   // PAGINATED BOOKINGS
   // =========================================================
 
   const paginatedBookings = useMemo(() => {
-    const start =
-      (page - 1) * itemsPerPage;
+    const start = (page - 1) * itemsPerPage;
 
-    const end =
-      start + itemsPerPage;
+    const end = start + itemsPerPage;
 
     return activeData.slice(start, end);
-  }, [
-    activeData,
-    page,
-    itemsPerPage,
-  ]);
+  }, [activeData, page, itemsPerPage]);
 
   // =========================================================
   // RESET PAGE WHEN FILTER/DATA CHANGES
@@ -432,11 +400,7 @@ export default function Page() {
 
   useEffect(() => {
     setPage(1);
-  }, [
-    currentFilteredData.length,
-    totalBookings,
-    hasActiveFilters,
-  ]);
+  }, [currentFilteredData.length, totalBookings, hasActiveFilters]);
 
   // =========================================================
   // FILTER CALLBACK
@@ -461,11 +425,7 @@ export default function Page() {
           Array.isArray(prev) &&
           Array.isArray(filteredData) &&
           prev.length === filteredData.length &&
-          prev.every(
-            (item, index) =>
-              item?.id ===
-              filteredData[index]?.id
-          )
+          prev.every((item, index) => item?.id === filteredData[index]?.id)
         ) {
           return prev;
         }
@@ -473,11 +433,9 @@ export default function Page() {
         return filteredData;
       });
 
-      setHasActiveFilters(
-        Boolean(filtersActive)
-      );
+      setHasActiveFilters(Boolean(filtersActive));
     },
-    []
+    [],
   );
 
   // =========================================================
@@ -488,51 +446,33 @@ export default function Page() {
     return data.map((booking, index) => ({
       "Sr. No": index + 1,
 
-      "Customer Name":
-        booking.name || "N/A",
+      "Customer Name": booking.name || "N/A",
 
-      Phone:
-        booking.phone || "N/A",
+      Phone: booking.phone || "N/A",
 
-      Email:
-        booking.email || "N/A",
+      Email: booking.email || "N/A",
 
-      Place:
-        booking.place?.name || "N/A",
+      Place: booking.place?.name || "N/A",
 
-      Date:
-        booking.slotDateTime?.split("T")[0] ||
-        "N/A",
+      Date: booking.slotDateTime?.split("T")[0] || "N/A",
 
-      Time:
-        booking.slotDateTime
-          ?.split("T")[1]
-          ?.slice(0, 5) || "N/A",
+      Time: booking.slotDateTime?.split("T")[1]?.slice(0, 5) || "N/A",
 
-      "Total Tickets":
-        booking.totalSeats || 0,
+      "Total Tickets": booking.totalSeats || 0,
 
-      "Amount (₹)":
-        booking.totalAmount || 0,
+      "Amount (₹)": booking.totalAmount || 0,
 
-      "Booking Type":
-        booking.bookingType || "N/A",
+      "Booking Type": booking.bookingType || "N/A",
 
-      "Transaction ID":
-        booking.txnId || "N/A",
+      "Transaction ID": booking.txnId || "N/A",
 
-      "Payment ID":
-        booking.paymentId || "N/A",
+      "Payment ID": booking.paymentId || "N/A",
 
-      Status:
-        booking.status || "N/A",
+      Status: booking.status || "N/A",
 
-      "Created Date":
-        booking.createdAt
-          ? new Date(
-              booking.createdAt
-            ).toLocaleDateString("en-IN")
-          : "N/A",
+      "Created Date": booking.createdAt
+        ? new Date(booking.createdAt).toLocaleDateString("en-IN")
+        : "N/A",
     }));
   };
 
@@ -541,15 +481,9 @@ export default function Page() {
   // =========================================================
 
   const downloadCurrentPage = () => {
-    const formattedData =
-      formatDataForExcel(
-        paginatedBookings
-      );
+    const formattedData = formatDataForExcel(paginatedBookings);
 
-    downloadExcel(
-      formattedData,
-      `bookings_page_${page}`
-    );
+    downloadExcel(formattedData, `bookings_page_${page}`);
   };
 
   // =========================================================
@@ -561,20 +495,11 @@ export default function Page() {
       ? currentFilteredData
       : bookings || [];
 
-    const formattedData =
-      formatDataForExcel(
-        dataToDownload
-      );
+    const formattedData = formatDataForExcel(dataToDownload);
 
-    const prefix =
-      hasActiveFilters
-        ? "filtered"
-        : "all";
+    const prefix = hasActiveFilters ? "filtered" : "all";
 
-    downloadExcel(
-      formattedData,
-      `bookings_${prefix}`
-    );
+    downloadExcel(formattedData, `bookings_${prefix}`);
   };
 
   // =========================================================
@@ -582,34 +507,24 @@ export default function Page() {
   // =========================================================
 
   const downloadAllData = () => {
-    const formattedData =
-      formatDataForExcel(
-        bookings || []
-      );
+    const formattedData = formatDataForExcel(bookings || []);
 
-    downloadExcel(
-      formattedData,
-      "all_bookings"
-    );
+    downloadExcel(formattedData, "all_bookings");
   };
 
   // =========================================================
   // EXCEL DOWNLOAD
   // =========================================================
 
-  const downloadExcel = (
-    data,
-    filename
-  ) => {
-    const ws =
-      XLSX.utils.json_to_sheet(data);
+  const downloadExcel = (data, filename) => {
+    const ws = XLSX.utils.json_to_sheet(data);
 
     // =====================================================
     // COLUMN WIDTHS
     // =====================================================
 
     const colWidths = [
-      { wch: 8 },  // Sr. No
+      { wch: 8 }, // Sr. No
       { wch: 25 }, // Customer Name
       { wch: 15 }, // Phone
       { wch: 30 }, // Email
@@ -631,29 +546,20 @@ export default function Page() {
     // WORKBOOK
     // =====================================================
 
-    const wb =
-      XLSX.utils.book_new();
+    const wb = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(
-      wb,
-      ws,
-      "Bookings"
-    );
+    XLSX.utils.book_append_sheet(wb, ws, "Bookings");
 
     // =====================================================
     // TIMESTAMP
     // =====================================================
 
-    const timestamp =
-      new Date()
-        .toISOString()
-        .replace(/[:.]/g, "-")
-        .slice(0, 19);
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .slice(0, 19);
 
-    XLSX.writeFile(
-      wb,
-      `${filename}_${timestamp}.xlsx`
-    );
+    XLSX.writeFile(wb, `${filename}_${timestamp}.xlsx`);
 
     setShowDownloadOptions(false);
   };
@@ -664,17 +570,13 @@ export default function Page() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-
       {/* =====================================================
           PAGE HEADER
       ===================================================== */}
 
       <div className="w-full mx-auto mb-8">
-
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-
           <div>
-
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">
               Booking Management
             </h1>
@@ -682,7 +584,6 @@ export default function Page() {
             <p className="text-slate-500 font-medium">
               Manage all bookings and ticket activities.
             </p>
-
           </div>
 
           {/* =================================================
@@ -690,19 +591,25 @@ export default function Page() {
           ================================================= */}
 
           <div className="relative">
-
+            <Button>
+              <Link
+                href={`/book-tickets/${placeId}`}
+                iconPosition="left"
+                icon={PlusCircle}
+                text="Ticket Book"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Ticket Book
+              </Link>
+            </Button>
+            
             <Button
               iconPosition="left"
               icon={Download}
               text="Download Excel"
-              onClick={() =>
-                setShowDownloadOptions(
-                  (prev) => !prev
-                )
-              }
+              onClick={() => setShowDownloadOptions((prev) => !prev)}
             >
               <Download className="w-4 h-4" />
-
               Download Excel
             </Button>
 
@@ -712,9 +619,7 @@ export default function Page() {
 
             {showDownloadOptions && (
               <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-slate-200 z-50">
-
                 <div className="p-3 border-b border-slate-100">
-
                   <h3 className="text-sm font-semibold text-slate-900">
                     Download Options
                   </h3>
@@ -722,48 +627,32 @@ export default function Page() {
                   <p className="text-xs text-slate-500 mt-1">
                     Select what data you want to export
                   </p>
-
                 </div>
 
                 <div className="p-2">
-
                   {/* =========================================
                       CURRENT PAGE
                   ========================================= */}
 
                   <button
-                    onClick={
-                      downloadCurrentPage
-                    }
+                    onClick={downloadCurrentPage}
                     className="w-full text-left px-3 py-2.5 hover:bg-blue-50 rounded-lg transition-colors group"
                   >
-
                     <div className="flex items-center gap-3">
-
                       <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-
                         <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-
                       </div>
 
                       <div>
-
                         <p className="text-sm font-medium text-slate-900">
                           Download Current Page
                         </p>
 
                         <p className="text-xs text-slate-500">
-                          Page {page} (
-                          {
-                            paginatedBookings.length
-                          }{" "}
-                          bookings)
+                          Page {page} ({paginatedBookings.length} bookings)
                         </p>
-
                       </div>
-
                     </div>
-
                   </button>
 
                   {/* =========================================
@@ -802,37 +691,25 @@ export default function Page() {
                   ========================================= */}
 
                   <button
-                    onClick={
-                      downloadAllData
-                    }
+                    onClick={downloadAllData}
                     className="w-full text-left px-3 py-2.5 hover:bg-purple-50 rounded-lg transition-colors group mt-1"
                   >
-
                     <div className="flex items-center gap-3">
-
                       <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-
                         <FileSpreadsheet className="w-4 h-4 text-purple-600" />
-
                       </div>
 
                       <div>
-
                         <p className="text-sm font-medium text-slate-900">
                           Download All Data
                         </p>
 
                         <p className="text-xs text-slate-500">
-                          All bookings (
-                          {totalBookings} total)
+                          All bookings ({totalBookings} total)
                         </p>
-
                       </div>
-
                     </div>
-
                   </button>
-
                 </div>
 
                 {/* =========================================
@@ -840,27 +717,17 @@ export default function Page() {
                 ========================================= */}
 
                 <div className="p-2 border-t border-slate-100">
-
                   <button
-                    onClick={() =>
-                      setShowDownloadOptions(
-                        false
-                      )
-                    }
+                    onClick={() => setShowDownloadOptions(false)}
                     className="w-full text-center px-3 py-2 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                   >
                     Cancel
                   </button>
-
                 </div>
-
               </div>
             )}
-
           </div>
-
         </div>
-
       </div>
 
       {/* =====================================================
@@ -868,7 +735,6 @@ export default function Page() {
       ===================================================== */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-
         <StatCard
           title="Total Bookings"
           value={totalBookings}
@@ -895,7 +761,6 @@ export default function Page() {
           trendingText="Completed bookings"
           subText="Successfully paid bookings"
         />
-
       </div>
 
       {/* =====================================================
@@ -903,51 +768,30 @@ export default function Page() {
       ===================================================== */}
 
       <div>
-
         <BookingTable
           data={paginatedBookings}
           allData={bookings || []}
           loading={isLoading}
           ticketTypes={ticketTypes}
-          onFilteredDataChange={
-            handleFilteredDataChange
-          }
+          onFilteredDataChange={handleFilteredDataChange}
           onView={(booking) => {
-            router.push(
-              `/dashboard/booking/${booking.id}`
-            );
+            router.push(`/dashboard/booking/${booking.id}`);
           }}
           paginationProps={{
             page,
             totalPages,
             itemsPerPage,
 
-            totalItems:
-              activeData.length,
+            totalItems: activeData.length,
 
-            onNext: () =>
-              setPage((p) =>
-                Math.min(
-                  p + 1,
-                  totalPages
-                )
-              ),
+            onNext: () => setPage((p) => Math.min(p + 1, totalPages)),
 
-            onPrev: () =>
-              setPage((p) =>
-                Math.max(
-                  p - 1,
-                  1
-                )
-              ),
+            onPrev: () => setPage((p) => Math.max(p - 1, 1)),
 
-            onPageChange: (newPage) =>
-              setPage(newPage),
+            onPageChange: (newPage) => setPage(newPage),
           }}
         />
-
       </div>
-
     </div>
   );
 }
