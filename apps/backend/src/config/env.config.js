@@ -1,0 +1,17 @@
+export const envConfig = {
+  PORT: process.env.PORT,
+
+  DATABASE_URL: process.env.DATABASE_URL,
+
+  ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
+  ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
+  REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN,
+
+  EASEBUZZ_KEY: process.env.EASEBUZZ_KEY,
+  EASEBUZZ_SALT: process.env.EASEBUZZ_SALT,
+
+  BASE_URL: process.env.BASE_URL,
+
+  QR_SECRET: process.env.QR_SECRET,
+};

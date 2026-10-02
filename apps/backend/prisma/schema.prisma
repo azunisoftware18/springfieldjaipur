@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// USER
+model User {
+  id       String  @id @default(uuid())
+  fullName String  @map("full_name")
+  role     String  @default("USER")
+  email    String  @unique
+  password String?
+
+  refreshToken String?  @map("refresh_token")
+  phone        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tickets  Ticket[]
+  bookings Booking[]
+
+  @@map("users")
+}
+
+model Place {
+  id               String  @id @default(uuid())
+  name             String
+  location         String?
+  latitude         Float?
+  longitude        Float?
+  imageUrl         String?
+  imageKey         String?
+  shortDescription String?
+  description      String? @db.LongText
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticketTypes   TicketType[]
+  tickets       Ticket[]
+  slotTemplates SlotTemplate[]
+  slotOverrides SlotOverride[]
+  bookings      Booking[]
+  addons        Addon[]
+
+  @@unique([name, location])
+  @@map("places")
+}
+
+// SLOT
+model SlotTemplate {
+  id      String @id @default(uuid())
+  placeId String @map("place_id")
+
+  startTime String @map("start_time")
+  endTime   String @map("end_time")
+  capacity  Int    @map("capacity")
+
+  place Place @relation(fields: [placeId], references: [id])
+
+  @@unique([placeId, startTime])
+  @@map("slot_templates")
+}
+
+model SlotOverride {
+  id String @id @default(uuid())
+
+  placeId   String   @map("place_id")
+  date      DateTime
+  startTime String   @map("start_time")
+
+  capacity Int?
+  isClosed Boolean @default(false) @map("is_closed")
+
+  place Place @relation(fields: [placeId], references: [id])
+
+  @@unique([placeId, date, startTime])
+  @@map("slot_overrides")
+}
+
+// TICKET TYPES
+model TicketType {
+  id      String @id @default(uuid())
+  name    String @unique // Adult, Child, Foreign
+  price   Float
+  placeId String @map("place_id")
+
+  maxPerBooking Int @default(6) @map("max_per_booking")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  place   Place    @relation(fields: [placeId], references: [id])
+  tickets Ticket[]
+
+  @@unique([name, placeId])
+  @@index([placeId])
+  @@map("ticket_types")
+}
+
+model Addon {
+  id String @id @default(uuid())
+
+  name  String // GUIDE, CAMERA, SAFARI
+  price Float
+
+  isActive Boolean @default(true) @map("is_active") // visible or not in booking 
+
+  placeId String @map("place_id")
+  place   Place  @relation(fields: [placeId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([name, placeId])
+  @@map("addons")
+}
+
+model Booking {
+  id String @id @default(uuid())
+
+  userId       String?  @map("user_id")
+  placeId      String   @map("place_id")
+  slotDateTime DateTime @map("slot_date_time")
+
+  bookingType BookingType @default(TICKET) @map("booking_type")
+
+  name  String
+  email String
+  phone String
+
+  totalAmount Float @map("total_amount")
+  totalSeats  Int   @map("total_seats")
+
+  status    String    @default("PENDING")
+  expiresAt DateTime? @map("expires_at")
+
+  txnId     String? @unique @map("txn_id")
+  paymentId String? @map("payment_id")
+
+  ticketPayload Json? @map("ticket_payload")
+
+  addonIds Json? @map("addon_ids")
+
+  ticketPdfUrl String? @map("ticket_pdf_url")
+  ticketPdfKey String? @map("ticket_pdf_key")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tickets Ticket[]
+  user    User?    @relation(fields: [userId], references: [id])
+  place   Place    @relation(fields: [placeId], references: [id])
+
+  @@map("bookings")
+}
+
+// TICKET
+model Ticket {
+  id String @id @default(uuid())
+
+  bookingId String  @map("booking_id")
+  userId    String? @map("user_id")
+  placeId   String  @map("place_id")
+
+  slotDateTime DateTime @map("slot_date_time")
+  typeId       String   @map("type_id")
+
+  qrCode String @unique @map("qr_code")
+
+  status String @default("PENDING") // PENDING, SCANNED, EXPIRED
+
+  booking Booking    @relation(fields: [bookingId], references: [id])
+  type    TicketType @relation(fields: [typeId], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User?     @relation(fields: [userId], references: [id])
+  place     Place     @relation(fields: [placeId], references: [id])
+  scanLogs  ScanLog[]
+
+  @@map("tickets")
+}
+
+// GATE
+model Gate {
+  id   String   @id @default(uuid())
+  name String
+  type GateType
+
+  // optional geo
+  latitude  Float?
+  longitude Float?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("gates")
+}
+
+// SCAN LOG
+model ScanLog {
+  id String @id @default(uuid())
+
+  ticketId String   @map("ticket_id")
+  gateId   String?  @map("gate_id")
+  type     GateType
+
+  scannedAt DateTime @default(now()) @map("scanned_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@map("scan_logs")
+}
+
+model Setting {
+  id String @id @default("global-setting")
+
+  companyName String?
+  email       String?
+  phone       String?
+  address     String? @db.LongText
+
+  logo    String? // S3 URL
+  logoKey String? // S3 Key
+
+  socialLinks Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+enum GateType {
+  ENTRY
+  EXIT
+}
+
+enum BookingType {
+  TICKET
+  PASS
+}
