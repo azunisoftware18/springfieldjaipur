@@ -516,7 +516,7 @@ const StartStep = ({ onNext }) => (
           "
         >
           springfieldschool.events@gmail.com
-        </a> */}
+        </a> */} 
 
         <span className="hidden sm:block text-gray-300">|</span>
 
