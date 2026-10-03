@@ -1248,36 +1248,40 @@ class BookingService {
     // ============================================================
 
     if (paymentMethod === "ONLINE") {
-      const key = envConfig.EASEBUZZ_KEY;
-      const salt = envConfig.EASEBUZZ_SALT;
-
-      const hashString = `${key}|${txnId}|${booking.totalAmount}|Ticket Booking|${name}|${email}|||||||||||${salt}`;
-
-      const hash = crypto.createHash("sha512").update(hashString).digest("hex");
 
       return {
-        booking,
-        isCashBooking: false,
-        isOnlinePayment: true,
+        message: "PG not integrated yet. Please use UPI or Cash for now.",
+      }
+      // const key = envConfig.EASEBUZZ_KEY;
+      // const salt = envConfig.EASEBUZZ_SALT;
 
-        payment: {
-          txnid: txnId,
-          amount: booking.totalAmount,
-          firstname: name,
-          email,
-          phone,
-          productinfo: "Ticket Booking",
+      // const hashString = `${key}|${txnId}|${booking.totalAmount}|Ticket Booking|${name}|${email}|||||||||||${salt}`;
 
-          surl: `${envConfig.BASE_URL}/api/booking/success`,
+      // const hash = crypto.createHash("sha512").update(hashString).digest("hex");
 
-          furl: `${envConfig.BASE_URL}/api/booking/failure`,
+      // return {
+      //   booking,
+      //   isCashBooking: false,
+      //   isOnlinePayment: true,
 
-          key,
-          hash,
+      //   payment: {
+      //     txnid: txnId,
+      //     amount: booking.totalAmount,
+      //     firstname: name,
+      //     email,
+      //     phone,
+      //     productinfo: "Ticket Booking",
 
-          url: "https://testpay.easebuzz.in/pay/secure",
-        },
-      };
+      //     surl: `${envConfig.BASE_URL}/api/booking/success`,
+
+      //     furl: `${envConfig.BASE_URL}/api/booking/failure`,
+
+      //     key,
+      //     hash,
+
+      //     url: "https://testpay.easebuzz.in/pay/secure",
+      //   },
+      // };
     }
   }
 
