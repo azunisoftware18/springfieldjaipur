@@ -333,6 +333,23 @@ export default function VisitorForm({
   // =========================================================
   // HANDLE SUBMIT
   // =========================================================
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+
+  //   if (!isFormValid) return;
+
+  //   const finalData = {
+  //     ...formData,
+
+  //     // Logged-in → selected CASH/UPI
+  //     // Guest → force ONLINE
+  //     paymentMethod: showCashOption ? formData.paymentMethod : "ONLINE",
+  //   };
+
+  //   dispatch(setVisitorInfo(finalData));
+  //   onSubmit(finalData);
+  // };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -340,11 +357,14 @@ export default function VisitorForm({
 
     const finalData = {
       ...formData,
-
-      // Logged-in → selected CASH/UPI
-      // Guest → force ONLINE
       paymentMethod: showCashOption ? formData.paymentMethod : "ONLINE",
     };
+
+    // Temporary: Online payment gateway not integrated
+    if (finalData.paymentMethod === "ONLINE") {
+      alert("Online payment is currently unavailable. Please connect admin.");
+      return;
+    }
 
     dispatch(setVisitorInfo(finalData));
     onSubmit(finalData);

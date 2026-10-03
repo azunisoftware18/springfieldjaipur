@@ -603,15 +603,15 @@ return (
                         icon: Eye,
                         onClick: () => onView?.(booking),
                       },
-                      {
-                        label: "Cancel Booking",
-                        icon: XCircle,
-                        danger: true,
-                        onClick: () => onCancel?.(booking),
-                        disabled:
-                          booking.status === "CANCELLED" ||
-                          booking.status === "FAILED",
-                      },
+                      // {
+                      //   label: "Cancel Booking",
+                      //   icon: XCircle,
+                      //   danger: true,
+                      //   onClick: () => onCancel?.(booking),
+                      //   disabled:
+                      //     booking.status === "CANCELLED" ||
+                      //     booking.status === "FAILED",
+                      // },
                     ]}
                   />
                 )}
