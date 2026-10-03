@@ -682,6 +682,8 @@ class TicketService {
       addonString,
     }
   ) {
+    console.log(booking);
+    
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
     const margin = 30;
@@ -803,7 +805,7 @@ class TicketService {
     cursorY += 45;
 
     drawField(leftX, cursorY, "Ticket Type", ticket.type?.name || "Adult");
-    drawField(rightX, cursorY, "Payment Mode", "Easebuzz");
+    drawField(rightX, cursorY, "Payment Mode", booking.paymentMethod);
     cursorY += 45;
 
     // ─── 🔥 FIX 3: ADD-ONS SECTION (Full Width) ───
