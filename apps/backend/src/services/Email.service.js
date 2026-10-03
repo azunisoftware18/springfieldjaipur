@@ -34,9 +34,9 @@ class EmailService {
       const info = await this.transporter.sendMail({
         from: `"Garba Edit" <${process.env.MAIL_USER}>`,
         to,
-        subject: `Your Booking Confirmed — Garba Edit`,
+        subject: `Booking Confirmation – Garba Edit | Springfield School`,
         html: this._buildTemplate({ name, booking, to }),
-        attachments,
+        attachments, 
       });
 
       console.log("Email Success:", info.messageId);
