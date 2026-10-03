@@ -503,7 +503,7 @@ const StartStep = ({ onNext }) => (
           sm:gap-4
         "
       >
-        <a
+        {/* <a
           href="mailto:springfieldschool.events@gmail.com"
           className="
             text-[11px]
@@ -516,7 +516,7 @@ const StartStep = ({ onNext }) => (
           "
         >
           springfieldschool.events@gmail.com
-        </a>
+        </a> */}
 
         <span className="hidden sm:block text-gray-300">|</span>
 
