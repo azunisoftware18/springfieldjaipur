@@ -1,49 +1,68 @@
-  "use client";
+"use client";
 
-  import { useState, useMemo } from "react";
-  import { useRouter } from "next/navigation";
-  import { Pencil, Trash, MapPin, Calendar, Globe } from "lucide-react";
-  import ActionMenu from "../common/ActionMenu";
-  import { TableShell, TableLoader, TableEmpty } from "@/components/table/core";
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { Pencil, Trash, MapPin, Calendar, Globe } from "lucide-react";
+import ActionMenu from "../common/ActionMenu";
+import { TableLoader, TableEmpty } from "@/components/table/core";
+import SearchField from "@/components/ui/SearchField"; // SearchField import karein
 
-  export default function PlaceCards({
-    data = [],
-    loading,
-    onEdit,
-    onDelete,
-  }) {
-    const [search, setSearch] = useState("");
-    const router = useRouter();
+export default function PlaceCards({
+  data = [],
+  loading,
+  onEdit,
+  onDelete,
+}) {
+  const [search, setSearch] = useState("");
+  const router = useRouter();
 
-    const filteredPlaces = useMemo(() => {
-      return data.filter((place) =>
-        [place.name, place.location].some((val) =>
-          val?.toLowerCase().includes(search.toLowerCase())
-        )
-      );
-    }, [data, search]);
+  const filteredPlaces = useMemo(() => {
+    return data.filter((place) =>
+      [place.name, place.location].some((val) =>
+        val?.toLowerCase().includes(search.toLowerCase())
+      )
+    );
+  }, [data, search]);
 
-    return (
-      <TableShell
-        title="Tourist Places"
-        subtitle={`${filteredPlaces.length} total places found`}
-        searchProps={{
-          value: search,
-          onChange: (e) => setSearch(e.target.value),
-          onClear: () => setSearch(""),
-          placeholder: "Search by name or city...",
-        }}
-      >
+  return (
+    // 🔥 FIX: TableShell ki jagah simple div wrapper use karein
+    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      
+      {/* Header Section (Same as TableShell) */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 py-5 border-b border-slate-100 gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+            Tourist Places
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            {filteredPlaces.length} total places found
+          </p>
+        </div>
+
+        <div className="w-full sm:w-72">
+          <SearchField
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch("")}
+            placeholder="Search by name or city..."
+          />
+        </div>
+      </div>
+
+      {/* Content Area */}
+      <div className="p-6">
         {loading ? (
-          <div className="p-8"><TableLoader rows={3} /></div>
+          <div className="p-8">
+            <TableLoader rows={3} />
+          </div>
         ) : filteredPlaces.length === 0 ? (
           <TableEmpty message="No tourist places found matching your search." />
         ) : (
           /* Card Grid Layout */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPlaces.map((place) => (
-              <div 
-                key={place.id} 
+              <div
+                key={place.id}
                 className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative group"
               >
                 {/* Top Row: Name & Action Menu */}
@@ -57,7 +76,7 @@
                       {place.location || "Unknown Location"}
                     </div>
                   </div>
-                  
+
                   <ActionMenu
                     items={[
                       {
@@ -83,12 +102,20 @@
                 {/* Coordinates Section */}
                 <div className="bg-slate-50 rounded-lg p-3 flex justify-between mb-4">
                   <div className="text-center flex-1 border-r border-slate-200">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Latitude</p>
-                    <p className="font-mono text-sm text-slate-700">{place.latitude?.toFixed(6) ?? "0.000000"}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                      Latitude
+                    </p>
+                    <p className="font-mono text-sm text-slate-700">
+                      {place.latitude?.toFixed(6) ?? "0.000000"}
+                    </p>
                   </div>
                   <div className="text-center flex-1">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Longitude</p>
-                    <p className="font-mono text-sm text-slate-700">{place.longitude?.toFixed(6) ?? "0.000000"}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                      Longitude
+                    </p>
+                    <p className="font-mono text-sm text-slate-700">
+                      {place.longitude?.toFixed(6) ?? "0.000000"}
+                    </p>
                   </div>
                 </div>
 
@@ -102,7 +129,7 @@
                       year: "numeric",
                     })}
                   </div>
-                  <button 
+                  <button
                     onClick={() => router.push(`/dashboard/place/${place.id}`)}
                     className="text-xs font-medium text-blue-600 hover:underline"
                   >
@@ -113,6 +140,7 @@
             ))}
           </div>
         )}
-      </TableShell>
-    );
-  }
+      </div>
+    </div>
+  );
+}

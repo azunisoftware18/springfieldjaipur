@@ -297,6 +297,8 @@
 //   );
 // }
 
+
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
@@ -327,23 +329,13 @@ export default function Page() {
 
   const { data: ticketTypes = [] } = useTicketTypes(placeId);
 
-  // =========================================================
-  // DOWNLOAD STATE
-  // =========================================================
 
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
 
-  // =========================================================
-  // FILTERED DATA STATE
-  // =========================================================
 
   const [currentFilteredData, setCurrentFilteredData] = useState([]);
 
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
-
-  // =========================================================
-  // BOOKING STATS
-  // =========================================================
 
   const totalBookings = bookings?.length || 0;
 
@@ -364,27 +356,13 @@ export default function Page() {
         booking.status === "PAID" || booking.paymentStatus === "PAID",
     ).length || 0;
 
-  // =========================================================
-  // ACTIVE DATA
-  // =========================================================
-  //
-  // IMPORTANT:
-  // If filters are active and result is empty,
-  // we MUST keep [] instead of falling back to all bookings.
-  //
-  // =========================================================
 
   const activeData = hasActiveFilters ? currentFilteredData : bookings || [];
 
-  // =========================================================
-  // TOTAL PAGES
-  // =========================================================
+
 
   const totalPages = Math.ceil(activeData.length / itemsPerPage) || 1;
 
-  // =========================================================
-  // PAGINATED BOOKINGS
-  // =========================================================
 
   const paginatedBookings = useMemo(() => {
     const start = (page - 1) * itemsPerPage;
@@ -394,24 +372,12 @@ export default function Page() {
     return activeData.slice(start, end);
   }, [activeData, page, itemsPerPage]);
 
-  // =========================================================
-  // RESET PAGE WHEN FILTER/DATA CHANGES
-  // =========================================================
-
+ 
   useEffect(() => {
     setPage(1);
   }, [currentFilteredData.length, totalBookings, hasActiveFilters]);
 
-  // =========================================================
-  // FILTER CALLBACK
-  // =========================================================
-  //
-  // useCallback keeps the function reference stable.
-  // This prevents BookingTable's useEffect from firing
-  // continuously.
-  //
-  // =========================================================
-
+ 
   const handleFilteredDataChange = useCallback(
     (filteredData, filtersActive) => {
       setCurrentFilteredData((prev) => {
@@ -469,6 +435,8 @@ export default function Page() {
       "Payment ID": booking.paymentId || "N/A",
 
       Status: booking.status || "N/A",
+
+      "Payment Method": booking.paymentMethod || "CASH",
 
       "Created Date": booking.createdAt
         ? new Date(booking.createdAt).toLocaleDateString("en-IN")
@@ -590,19 +558,19 @@ export default function Page() {
               DOWNLOAD BUTTON
           ================================================= */}
 
-          <div className="relative">
-            <Button>
+          <div className="flex gap-2">
+            <div className=" rounded-x border border-black p-2  ">
               <Link
                 href={`/book-tickets/${placeId}`}
                 iconPosition="left"
                 icon={PlusCircle}
                 text="Ticket Book"
               >
-                <PlusCircle className="w-4 h-4" />
+                {/* <PlusCircle className="w-4 h-4" /> */}
                 Ticket Book
               </Link>
-            </Button>
-            
+            </div>
+
             <Button
               iconPosition="left"
               icon={Download}

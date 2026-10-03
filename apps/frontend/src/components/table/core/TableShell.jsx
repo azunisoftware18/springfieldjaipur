@@ -8,7 +8,7 @@ export default function TableShell({
   searchProps,
   children,
   paginationProps,
-  customFilters, // New prop for custom filters
+  customFilters, // Custom filters prop
 }) {
   return (
     <div className="w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -27,7 +27,7 @@ export default function TableShell({
                 {customFilters}
               </div>
             )}
-            
+
             {searchProps && (
               <div className="w-full sm:w-72">
                 <SearchField {...searchProps} />

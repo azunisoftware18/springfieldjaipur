@@ -140,7 +140,8 @@ model Booking {
   txnId     String? @unique @map("txn_id")
   paymentId String? @map("payment_id")
 
-  ticketPayload Json? @map("ticket_payload")
+  ticketPayload Json?         @map("ticket_payload")
+  paymentMethod PaymentMethod @map("payment_method")
 
   addonIds Json? @map("addon_ids")
 
@@ -240,4 +241,10 @@ enum GateType {
 enum BookingType {
   TICKET
   PASS
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  ONLINE
 }

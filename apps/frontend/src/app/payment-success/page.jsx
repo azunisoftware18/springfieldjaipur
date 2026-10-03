@@ -104,8 +104,8 @@ function SuccessContent() {
                                 </span>
                             </div>
                             <div className="text-right">
-                                <span className="text-[10px] uppercase tracking-wider text-gray-400 block font-sans font-medium">Payment Mode</span>
-                                <span className="text-xs sm:text-base font-serif font-bold text-royal-blue tracking-wide block">Easebuzz</span>
+                                {/* <span className="text-[10px] uppercase tracking-wider text-gray-400 block font-sans font-medium">Payment Mode</span> */}
+                                {/* <span className="text-xs sm:text-base font-serif font-bold text-royal-blue tracking-wide block">Easebuzz</span> */}
                             </div>
                         </div>
                     </div>

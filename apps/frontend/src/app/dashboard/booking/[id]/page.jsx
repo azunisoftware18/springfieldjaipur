@@ -126,7 +126,7 @@ export default function BookingDetailsPage() {
               onClick={() => {
                 window.open(
                   `${process.env.NEXT_PUBLIC_API_URL}/ticket/download/${booking.id}`,
-                  "_blank"
+                  "_blank",
                 );
               }}
               className="border border-slate-200 rounded-lg text-slate-600"
@@ -285,14 +285,15 @@ export default function BookingDetailsPage() {
                     </label>
                     <div className="mt-1">
                       <span
-                        className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${booking.status === "PAID"
+                        className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                          booking.status === "PAID"
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                             : booking.status === "PENDING"
                               ? "bg-yellow-50 text-yellow-700 border border-yellow-100"
                               : booking.status === "CANCELLED"
                                 ? "bg-red-50 text-red-700 border border-red-100"
                                 : "bg-slate-50 text-slate-700 border border-slate-100"
-                          }`}
+                        }`}
                       >
                         {booking.status || "PENDING"}
                       </span>
@@ -331,12 +332,13 @@ export default function BookingDetailsPage() {
                         {/* Status */}
                         <div>
                           <span
-                            className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${ticket.status === "SCANNED"
+                            className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                              ticket.status === "SCANNED"
                                 ? "bg-blue-50 text-blue-700 border border-blue-100"
                                 : ticket.status === "PENDING"
                                   ? "bg-yellow-50 text-yellow-700 border border-yellow-100"
                                   : "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                              }`}
+                            }`}
                           >
                             {ticket.status}
                           </span>
@@ -433,6 +435,7 @@ export default function BookingDetailsPage() {
             </div>
 
             {/* Addons */}
+
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="border-b border-slate-100 px-6 py-4">
                 <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
@@ -451,7 +454,7 @@ export default function BookingDetailsPage() {
                       >
                         <div>
                           <p className="font-semibold text-slate-900">
-                            {item.addon?.name}
+                            {item.name}
                           </p>
 
                           <p className="text-sm text-slate-500">
@@ -463,6 +466,12 @@ export default function BookingDetailsPage() {
                           <p className="font-bold text-emerald-600">
                             ₹{item.price}
                           </p>
+
+                          {item.quantity > 1 && (
+                            <p className="text-xs text-slate-400">
+                              Total: ₹{item.price * item.quantity}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}

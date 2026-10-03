@@ -36,7 +36,7 @@ export default function SlotCard({ slots, selectedSlot, onSelect }) {
                                 const getStatusText = () => {
                                     if (!slot.isAvailable && !isFull) return "⏳ EXPIRED";
                                     if (isFull) return "🚫 FULL BOOKED";
-                                    return `👤 ${slot.available} Seats Left`;
+                                    return `👤 ${slot.available} Tickets Left`;
                                 };
 
                                 return (

@@ -484,6 +484,7 @@ export default function BookingTable({
     "Payment ID",
     "Status",
     "Created",
+    "Payment Method",
     "Action",
   ];
 
@@ -693,6 +694,8 @@ return (
                   <StatusBadge status={booking.status} />
                 </td>
 
+                
+
                 {/* Created */}
                 <td className="px-4 py-3 text-slate-500 text-sm md:px-6 md:py-4 whitespace-nowrap">
                   {booking.createdAt
@@ -702,6 +705,13 @@ return (
                         year: "numeric",
                       })
                     : "N/A"}
+                </td>
+
+                {/* Payment Method */}
+                <td className="px-4 py-3 md:px-6 md:py-4">
+                  <span className="inline-flex px-2 py-1 rounded-md text-[11px] font-medium bg-green-50 text-green-700 border border-green-100 whitespace-nowrap">
+                    {booking.paymentMethod || "CASH"}
+                  </span>
                 </td>
 
               </TableRow>

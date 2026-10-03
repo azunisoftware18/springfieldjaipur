@@ -32,9 +32,9 @@ class EmailService {
       }
 
       const info = await this.transporter.sendMail({
-        from: `"Heritage Booking" <${process.env.MAIL_USER}>`,
+        from: `"Garba Edit" <${process.env.MAIL_USER}>`,
         to,
-        subject: `Your Booking Confirmed — ${booking.place?.name || "Heritage Ticket"}`,
+        subject: `Your Booking Confirmed — Garba Edit`,
         html: this._buildTemplate({ name, booking, to }),
         attachments,
       });
@@ -51,7 +51,7 @@ class EmailService {
   static async sendMail({ to, subject, html, attachments = [] }) {
     try {
       const info = await this.transporter.sendMail({
-        from: `"Heritage Booking" <${process.env.MAIL_USER}>`,
+        from: `"Garba Edit" <${process.env.MAIL_USER}>`,
         to,
         subject,
         html,
@@ -118,8 +118,17 @@ class EmailService {
               color:#d9a441;
               font-family:Georgia,serif;
             ">
-              ${booking.place?.name || "Heritage Monument"}
+             Garba Edit
             </h1>
+
+            <h3 style="
+              margin:0;
+              color:#d9a441;
+              font-family:Georgia,serif;
+            ">
+             Springfield School
+            </h3>
+
             <p style="margin-top:8px;">Booking Confirmation</p>
           </div>
 
@@ -141,11 +150,10 @@ class EmailService {
               <p><strong>Name:</strong> ${name}</p>
               <p><strong>Email:</strong> ${to}</p>
               <p><strong>Phone:</strong> ${booking.phone || "-"}</p>
-              <p><strong>Place:</strong> ${booking.place?.name || "-"}</p>
+              <p><strong>Place:</strong> Springfield School</p>
               <p><strong>Date:</strong> ${formattedDate}</p>
               <p><strong>Time:</strong> ${formattedTime}</p>
               <p><strong>Total Amount:</strong> Rs ${booking.totalAmount || "-"}</p>
-              <p><strong>Status:</strong> ${booking.status || "PAID"}</p>
             </div>
 
             <p style="margin-top:25px;color:#555;">

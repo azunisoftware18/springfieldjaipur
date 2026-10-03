@@ -32,11 +32,12 @@ export default function BookingFlowLeft({ place, itemVariants }) {
                     </span>
                 </motion.h1>
                 <div className="h-[1px] w-16 bg-gradient-to-r from-transparent via-gold/40 to-transparent my-3" />
-                <motion.p
+                <p
                     variants={itemVariants}
-                    className="text-sandstone/80 text-xs xl:text-sm font-light leading-relaxed italic px-4 w-full break-words line-clamp-3 overflow-hidden text-ellipsis font-serif">
-                    "{place?.shortDescription}"
-                </motion.p>
+                    className="text-sandstone/80 text-xs xl:text-sm ">
+                    "{place?.description}"
+                    {/* "{place?.shortDescription}" */}
+                </p>
             </div>
             <motion.div
                 variants={itemVariants}

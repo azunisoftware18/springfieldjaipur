@@ -138,9 +138,9 @@
 // }
 
 
-
 "use client";
-import React from "react";
+
+import React, { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { usePlace } from "@/hooks/useCurrentPlace";
@@ -148,20 +148,37 @@ import { setDate, setSlot } from "@/store/slices/bookingSlice";
 import SlotCard from "./SlotCard";
 import FullPageLoader from "@/components/ui/FullPageLoader";
 import { useSlots } from "@/hooks/useSlot";
-
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 export default function DateSelector({ onNext }) {
     const dispatch = useDispatch();
     const { placeId } = usePlace();
+
+    // 1. Calculate default date (16th of current month)
+    const defaultDate = useMemo(() => {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        return `${year}-${month}-16`;
+    }, []);
+
     const today = new Date().toISOString().split("T")[0];
     const selectedDate = useSelector((state) => state.booking.date);
     const selectedSlot = useSelector((state) => state.booking.slot);
 
+    // 2. Set default date on mount if no date is selected OR if current date is selected
+    useEffect(() => {
+        // Agar Redux mein koi date nahi hai, ya current date hai, toh 16th set karo
+        if (!selectedDate || selectedDate === today) {
+            dispatch(setDate(defaultDate));
+            dispatch(setSlot(null));
+        }
+    }, [selectedDate, defaultDate, today, dispatch]);
+
     const { data: slots = [], isLoading } = useSlots({
         placeId,
-        date: selectedDate
+        date: selectedDate,
     });
 
     const handleDateChange = (date) => {
@@ -180,7 +197,6 @@ export default function DateSelector({ onNext }) {
         return day === 16 || day === 17;
     };
 
-    // --- YAHAN THA ASLI BUG: Function khali tha, isliye undefined return kar raha tha ---
     const processSlotsWithTimeCheck = () => {
         if (!slots || !Array.isArray(slots) || slots.length === 0) return [];
 
@@ -213,7 +229,6 @@ export default function DateSelector({ onNext }) {
         });
     };
 
-    // Safety fallback (|| []) add kiya taaki crash na ho
     const validatedSlots = processSlotsWithTimeCheck() || [];
 
     if (!placeId) {
@@ -225,7 +240,7 @@ export default function DateSelector({ onNext }) {
     }
 
     return (
-        <> 
+        <>
             <AnimatePresence mode="wait">
                 {isLoading && <FullPageLoader message="Fetching Imperial Hours..." />}
             </AnimatePresence>
@@ -234,7 +249,7 @@ export default function DateSelector({ onNext }) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="w-full h-full flex flex-col justify-start space-y-2 flex-1 relative"  
+                className="w-full h-full flex flex-col justify-start space-y-2 flex-1 relative"
             >
                 <div className="space-y-4 shrink-0">
                     <div className="relative">
@@ -248,8 +263,8 @@ export default function DateSelector({ onNext }) {
                         <DatePicker
                             selected={selectedDate ? new Date(selectedDate) : null}
                             onChange={handleDateChange}
-                            filterDate={isDateAllowed} 
-                            minDate={new Date()} 
+                            filterDate={isDateAllowed}
+                            minDate={new Date()}
                             placeholderText="Select date (16th or 17th)"
                             className="w-full p-3.5 border border-gold/20 rounded-xl outline-none font-serif text-royal-blue bg-sandstone/10 focus:border-gold/50 focus:bg-white transition-all text-xs font-medium cursor-pointer shadow-inner"
                             wrapperClassName="w-full"
@@ -259,7 +274,6 @@ export default function DateSelector({ onNext }) {
 
                 <div className="w-full flex-1 flex flex-col">
                     <div className="w-full rounded-xl border border-dashed border-gold/15 p-3 bg-sandstone/5">
-                        {/* Yahan ab error nahi aayega kyunki validatedSlots hamesha array rahega */}
                         {!isLoading && validatedSlots.length === 0 ? (
                             <div className="py-12 text-center text-jaipur-dark/50 font-serif italic text-xs tracking-wider">
                                 No active passes available for this date.
@@ -285,12 +299,15 @@ export default function DateSelector({ onNext }) {
                         disabled={!selectedSlot}
                         onClick={onNext}
                         className={`w-full py-4 px-3 rounded-xl font-serif text-xs font-bold tracking-[3px] transition-all duration-300 uppercase border block mb-5
-                            ${!selectedSlot
-                                ? "bg-sandstone/40 text-gray-400 cursor-not-allowed border-gray-200/50"
-                                : "bg-gradient-to-r from-jaipur-dark to-[#994113] text-white border-gold/30 cursor-pointer shadow-md shadow-jaipur-dark/5"
+                            ${
+                                !selectedSlot
+                                    ? "bg-sandstone/40 text-gray-400 cursor-not-allowed border-gray-200/50"
+                                    : "bg-gradient-to-r from-jaipur-dark to-[#994113] text-white border-gold/30 cursor-pointer shadow-md shadow-jaipur-dark/5"
                             }`}
                     >
-                        {selectedSlot ? `Confirm ${selectedSlot.displayTime || selectedSlot.time} Entry ⟶` : "SELECT TIMING AT GATE"}
+                        {selectedSlot
+                            ? `Confirm ${selectedSlot.displayTime || selectedSlot.time} Entry ⟶`
+                            : "SELECT TIMING AT GATE"}
                     </motion.button>
                 </div>
             </motion.div>
