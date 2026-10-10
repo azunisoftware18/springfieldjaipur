@@ -71,6 +71,11 @@ router.post(
   asyncHandler(BookingController.create)
 );
 
+router.post(
+  "/payment/verify",
+  asyncHandler(BookingController.verifyCashfreePayment)
+);
+
 /**
  * Easebuzz payment success callback
  * No authentication required

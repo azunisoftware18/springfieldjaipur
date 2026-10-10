@@ -136,6 +136,32 @@ class BookingController {
 
     return res.json(ApiResponse.success(null, "Booking cancelled"));
   };
+
+  
+  // CASHFREE PAYMENT VERIFICATION
+  static verifyCashfreePayment = async (req, res) => {
+    const { orderId } = req.body;
+
+    const data = await BookingService.verifyCashfreePayment(orderId);
+
+    const isPaid = data?.status === "PAID";
+
+    return res.status(200).json(
+      ApiResponse.success(
+        {
+          bookingId: data?.id ?? data?.bookingId,
+          status: data?.status,
+          ticketPdfUrl: data?.ticketPdfUrl ?? null,
+          paymentVerified: isPaid,
+          paymentStatus: data?.paymentStatus ?? data?.status,
+          message: data?.message,
+        },
+        isPaid
+          ? "Cashfree payment verified successfully"
+          : "Payment is not completed yet"
+      )
+    );
+  };
 }
 
 export default BookingController;

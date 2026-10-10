@@ -11,6 +11,7 @@ import GuideSelector from "./bookingParts/GuideSelector";
 import VisitorForm from "./bookingParts/VisitorForm";
 import { ArrowRight, Lock } from "lucide-react";
 import FullPageLoader from "@/components/ui/FullPageLoader";
+import { load } from "@cashfreepayments/cashfree-js";
 
 export default function BookingFlowRight() {
   const [step, setStep] = useState(0);
@@ -21,10 +22,8 @@ export default function BookingFlowRight() {
 
   const { placeId, isPlaceLoaded } = usePlace();
 
-  const {
-    mutateAsync: createBooking,
-    isPending: isSubmitting,
-  } = useBookingMutation();
+  const { mutateAsync: createBooking, isPending: isSubmitting } =
+    useBookingMutation();
 
   // ============================================================
   // SCROLL CONTROL
@@ -73,9 +72,7 @@ export default function BookingFlowRight() {
   // ============================================================
   const handleFinalBooking = async (visitorInfo) => {
     try {
-      const paymentMethod = isLoggedIn
-        ? visitorInfo?.paymentMethod
-        : "ONLINE";
+      const paymentMethod = isLoggedIn ? visitorInfo?.paymentMethod : "ONLINE";
 
       if (!["CASH", "UPI", "ONLINE"].includes(paymentMethod)) {
         throw new Error("Please select a valid payment method");
@@ -85,9 +82,9 @@ export default function BookingFlowRight() {
         throw new Error("Guest users can only use online payment");
       }
 
-      if (isLoggedIn && !["CASH", "UPI"].includes(paymentMethod)) {
-        throw new Error("Please select Cash or UPI payment");
-      }
+      // if (isLoggedIn && !["CASH", "UPI", "ONLINE"].includes(paymentMethod)) {
+      //   throw new Error("Please select Cash or UPI payment");
+      // }
 
       if (!placeId) {
         throw new Error("Place information is not available");
@@ -119,7 +116,7 @@ export default function BookingFlowRight() {
 
       const totalSeats = tickets.reduce(
         (total, ticket) => total + Number(ticket.quantity),
-        0
+        0,
       );
 
       const payload = {
@@ -164,32 +161,43 @@ export default function BookingFlowRight() {
       }
 
       if (paymentMethod === "ONLINE") {
-        const paymentData = res?.data?.payment;
+        const responseData = res?.data?.data ?? res?.data ?? res;
+        const paymentData = responseData?.payment;
 
-        if (!paymentData) {
-          throw new Error("Easebuzz payment details not received");
+        const paymentSessionId =
+          paymentData?.paymentSessionId || paymentData?.payment_session_id;
+
+        if (!paymentSessionId) {
+          console.error("Cashfree response:", res);
+          throw new Error(
+            "Cashfree payment session ID not received. Check backend response.",
+          );
         }
 
-        if (!paymentData?.url) {
-          throw new Error("Easebuzz payment URL not received");
-        }
-
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = paymentData.url;
-
-        Object.entries(paymentData).forEach(([key, value]) => {
-          if (key === "url") return;
-
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = key;
-          input.value = value ?? "";
-          form.appendChild(input);
+        const cashfree = await load({
+          mode:
+            process.env.NEXT_PUBLIC_CASHFREE_ENV === "PRODUCTION"
+              ? "production"
+              : "sandbox",
         });
 
-        document.body.appendChild(form);
-        form.submit();
+        if (!cashfree) {
+          throw new Error("Cashfree checkout could not be initialized");
+        }
+
+        const checkoutResult = await cashfree.checkout({
+          paymentSessionId,
+          redirectTarget: "_self",
+        });
+
+        // Cashfree normally redirects the user to its checkout.
+        // If checkout returns an error, show it instead of silently continuing.
+        if (checkoutResult?.error) {
+          throw new Error(
+            checkoutResult.error.message || "Unable to open Cashfree checkout",
+          );
+        }
+
         return;
       }
     } catch (error) {
@@ -294,9 +302,7 @@ export default function BookingFlowRight() {
         </AnimatePresence>
       </div>
 
-      {isSubmitting && (
-        <FullPageLoader message="Generating Secure Ledger..." />
-      )}
+      {isSubmitting && <FullPageLoader message="Generating Secure Ledger..." />}
     </div>
   );
 }
@@ -305,13 +311,8 @@ export default function BookingFlowRight() {
 // STEP RENDERER
 // ============================================================
 function renderStep(step, props) {
-  const {
-    setStep,
-    handleFinalBooking,
-    reduxData,
-    isSubmitting,
-    isLoggedIn,
-  } = props;
+  const { setStep, handleFinalBooking, reduxData, isSubmitting, isLoggedIn } =
+    props;
 
   switch (step) {
     case 0:
@@ -516,7 +517,7 @@ const StartStep = ({ onNext }) => (
           "
         >
           springfieldschool.events@gmail.com
-        </a> */} 
+        </a> */}
 
         <span className="hidden sm:block text-gray-300">|</span>
 
@@ -532,7 +533,7 @@ const StartStep = ({ onNext }) => (
             whitespace-nowrap
           "
         >
-          +91 90249 24594 <br/> +91 78785 49539
+          +91 90249 24594 <br /> +91 78785 49539
         </a>
       </div>
     </div>

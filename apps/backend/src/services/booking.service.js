@@ -945,6 +945,7 @@ import path from "path";
 import { upload } from "../utils/s3Service.js";
 import WhatsappService from "./whatsapp.service.js";
 import EmailService from "./Email.service.js";
+import { cashfree } from "../config/cashfree.config.js";
 
 class BookingService {
   // ============================================================
@@ -993,7 +994,7 @@ class BookingService {
     }
 
     // Logged-in user CASH/UPI use kar sakta hai
-    if (user?.id && !["CASH", "UPI"].includes(paymentMethod)) {
+    if (user?.id && !["CASH", "UPI", "ONLINE"].includes(paymentMethod)) {
       throw ApiError.badRequest(
         "Logged-in users can only use Cash or UPI payment"
       );
@@ -1247,43 +1248,111 @@ class BookingService {
     // ONLINE → EASEBUZZ
     // ============================================================
 
-    if (paymentMethod === "ONLINE") {
+   
+if (paymentMethod === "ONLINE") {
+  try {
+    const orderRequest = {
+      order_id: booking.txnId,
+      order_amount: Number(booking.totalAmount.toFixed(2)),
+      order_currency: "INR",
 
-      return {
-        message: "PG not integrated yet. Please use UPI or Cash for now.",
-      }
-      // const key = envConfig.EASEBUZZ_KEY;
-      // const salt = envConfig.EASEBUZZ_SALT;
+      customer_details: {
+        customer_id: user?.id
+          ? String(user.id)
+          : `guest_${booking.id}`,
 
-      // const hashString = `${key}|${txnId}|${booking.totalAmount}|Ticket Booking|${name}|${email}|||||||||||${salt}`;
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone,
+      },
 
-      // const hash = crypto.createHash("sha512").update(hashString).digest("hex");
+      order_meta: {
+        return_url:
+          `${envConfig.FRONTEND_URL}/payment-success/return` +
+          `?order_id=${booking.txnId}`,
+      },
 
-      // return {
-      //   booking,
-      //   isCashBooking: false,
-      //   isOnlinePayment: true,
+      order_note: `Ticket booking ${booking.id}`,
+    };
 
-      //   payment: {
-      //     txnid: txnId,
-      //     amount: booking.totalAmount,
-      //     firstname: name,
-      //     email,
-      //     phone,
-      //     productinfo: "Ticket Booking",
+    const response = await cashfree.PGCreateOrder(orderRequest);
+    const cashfreeOrder = response.data;
 
-      //     surl: `${envConfig.BASE_URL}/api/booking/success`,
+    return {
+      booking,
+      isCashBooking: false,
+      isOnlinePayment: true,
+      payment: {
+        provider: "CASHFREE",
+        orderId: cashfreeOrder.order_id,
+        paymentSessionId: cashfreeOrder.payment_session_id,
+        amount: booking.totalAmount,
+        currency: "INR",
+      },
+    };
+  } catch (error) {
+    console.error(
+      "Cashfree order creation failed:",
+      error.response?.data || error.message
+    );
 
-      //     furl: `${envConfig.BASE_URL}/api/booking/failure`,
-
-      //     key,
-      //     hash,
-
-      //     url: "https://testpay.easebuzz.in/pay/secure",
-      //   },
-      // };
-    }
+    // Booking ko unpaid hi rakhein.
+    throw ApiError.badRequest(
+      "Unable to initialize online payment. Please try again."
+    );
   }
+}
+  }
+
+  
+static async verifyCashfreePayment(orderId) {
+  if (!orderId) {
+    throw ApiError.badRequest("Cashfree order ID is required");
+  }
+
+  const booking = await prisma.booking.findUnique({
+    where: { txnId: orderId },
+  });
+
+  if (!booking) {
+    throw ApiError.notFound("Booking not found");
+  }
+
+  // Idempotency: already completed booking return karein.
+  if (booking.status === "PAID" && booking.ticketPdfUrl) {
+    return booking;
+  }
+
+  const response = await cashfree.PGFetchOrder(orderId);
+  const order = response.data;
+
+  // Verify order identity and amount.
+  if (
+    order.order_id !== booking.txnId ||
+    Number(order.order_amount) !==
+      Number(Number(booking.totalAmount).toFixed(2))
+  ) {
+    throw ApiError.badRequest(
+      "Cashfree order details do not match booking"
+    );
+  }
+
+  // Cashfree ka server-side status hi authoritative hai.
+  if (order.order_status !== "PAID") {
+    return {
+      success: false,
+      message: "Payment is not completed yet",
+      status: order.order_status,
+      bookingId: booking.id,
+    };
+  }
+
+  // Existing PDF, QR, email aur WhatsApp workflow reuse hoga.
+  return await this.completeBooking(
+    booking.id,
+    order.cf_order_id ? String(order.cf_order_id) : orderId
+  );
+}
 
   // ============================================================
   // COMPLETE BOOKING
@@ -1477,44 +1546,44 @@ We can't wait to welcome you! 🎉`;
   // EASEBUZZ SUCCESS (Commented — ab use nahi ho raha)
   // ============================================================
   //
-  // static async paymentSuccess(data) {
-  //   const booking = await prisma.booking.findUnique({
-  //     where: { txnId: data.txnid },
-  //   });
-  //
-  //   if (!booking) throw ApiError.notFound("Booking not found");
-  //
-  //   if (!this.verifyHash(data)) {
-  //     throw ApiError.badRequest("Invalid payment");
-  //   }
-  //
-  //   if (!data.status || data.status.toLowerCase() !== "success") {
-  //     throw ApiError.badRequest("Payment failed");
-  //   }
-  //
-  //   return await this.completeBooking(booking.id, data.easepayid || null);
-  // }
+  static async paymentSuccess(data) {
+    const booking = await prisma.booking.findUnique({
+      where: { txnId: data.txnid },
+    });
+  
+    if (!booking) throw ApiError.notFound("Booking not found");
+  
+    if (!this.verifyHash(data)) {
+      throw ApiError.badRequest("Invalid payment");
+    }
+  
+    if (!data.status || data.status.toLowerCase() !== "success") {
+      throw ApiError.badRequest("Payment failed");
+    }
+  
+    return await this.completeBooking(booking.id, data.easepayid || null);
+  }
 
   // ============================================================
   // PAYMENT FAILURE (Commented — ab use nahi ho raha)
   // ============================================================
-  //
-  // static async paymentFailure(data) {
-  //   const booking = await prisma.booking.findUnique({
-  //     where: { txnId: data.txnid },
-  //   });
-  //
-  //   if (!booking) throw ApiError.notFound("Booking not found");
-  //
-  //   if (booking.status !== "PENDING") return booking;
-  //
-  //   await prisma.booking.update({
-  //     where: { txnId: data.txnid },
-  //     data: { status: "FAILED" },
-  //   });
-  //
-  //   return true;
-  // }
+  
+  static async paymentFailure(data) {
+    const booking = await prisma.booking.findUnique({
+      where: { txnId: data.txnid },
+    });
+  
+    if (!booking) throw ApiError.notFound("Booking not found");
+  
+    if (booking.status !== "PENDING") return booking;
+  
+    await prisma.booking.update({
+      where: { txnId: data.txnid },
+      data: { status: "FAILED" },
+    });
+  
+    return true;
+  }
 
   // ============================================================
   // EXPIRE BOOKINGS
@@ -1593,16 +1662,16 @@ We can't wait to welcome you! 🎉`;
   // VERIFY EASEBUZZ HASH (Commented — ab use nahi ho raha)
   // ============================================================
   //
-  // static verifyHash(data) {
-  //   const salt = envConfig.EASEBUZZ_SALT;
-  //   const key = envConfig.EASEBUZZ_KEY;
-  //
-  //   const str = `${salt}|${data.status}|||||||||||${data.email}|${data.firstname}|${data.productinfo}|${data.amount}|${data.txnid}|${key}`;
-  //
-  //   const hash = crypto.createHash("sha512").update(str).digest("hex");
-  //
-  //   return hash === data.hash;
-  // }
+  static verifyHash(data) {
+    const salt = envConfig.EASEBUZZ_SALT;
+    const key = envConfig.EASEBUZZ_KEY;
+  
+    const str = `${salt}|${data.status}|||||||||||${data.email}|${data.firstname}|${data.productinfo}|${data.amount}|${data.txnid}|${key}`;
+  
+    const hash = crypto.createHash("sha512").update(str).digest("hex");
+  
+    return hash === data.hash;
+  }
 
   // ============================================================
   // GENERATE TICKET QR
