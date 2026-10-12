@@ -74,7 +74,7 @@ export default function BookingFlowRight() {
     try {
       const paymentMethod = isLoggedIn ? visitorInfo?.paymentMethod : "ONLINE";
 
-      if (!["CASH", "UPI", "ONLINE"].includes(paymentMethod)) {
+      if (!["CASH", "UPI", "ONLINE", "FREE"].includes(paymentMethod)) {
         throw new Error("Please select a valid payment method");
       }
 
@@ -153,6 +153,14 @@ export default function BookingFlowRight() {
       }
 
       if (paymentMethod === "UPI") {
+        if (!bookingId) {
+          throw new Error("Booking ID not received");
+        }
+        window.location.href = `/payment-success?bookingId=${bookingId}`;
+        return;
+      }
+
+      if (paymentMethod === "FREE") {
         if (!bookingId) {
           throw new Error("Booking ID not received");
         }

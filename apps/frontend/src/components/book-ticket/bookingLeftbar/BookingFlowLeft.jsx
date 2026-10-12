@@ -14,6 +14,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
       time: "6:00 PM – 11:00 PM",
       details: [
         "Eligible: Class 6 to Class 12 students and alumni",
+        "Free Entry for Kids below 7 years",
         "Male Entry Fee: ₹350 per person",
         "Female Entry Fee: ₹350 per person",
         "Parents: Not allowed Dandiya Sticks",
@@ -26,7 +27,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
       time: "6:00 PM – 11:00 PM",
       details: [
         "Eligible: Nursery to Class 5 students",
-        "Entry Fee: ₹350 per person",
+        "Entry Fee: Free For Students",
         "Parents: Allowed",
         "Parent Entry Fee: ₹350 per person",
         "Pair of Dandiya Sticks: ₹50 per pair",
@@ -48,10 +49,9 @@ export default function BookingFlowLeft({ place, itemVariants }) {
         flex-col
         items-center
         justify-between
-        px-5 py-6
+        px-5 py-0
         sm:px-8 sm:py-8
-        lg:p-8
-        overflow-hidden
+        lg:p-0
         select-none
         relative
         border-r
@@ -82,29 +82,16 @@ export default function BookingFlowLeft({ place, itemVariants }) {
         ✦
       </div>
 
-      {/* Location */}
+      {/* Logo Image */}
       <motion.div
         variants={itemVariants}
-        className="
-          relative z-10
-          mb-4
-          border-2 border-gold/25
-          px-4 py-2
-          sm:px-5 sm:py-2
-          text-center
-          bg-[#071633]/50
-          backdrop-blur-xl
-          rounded-xl
-          w-full
-          max-w-[320px]
-          sm:max-w-[380px]
-          shrink-0
-          shadow-[0_10px_30px_rgba(0,0,0,0.15)]
-        "
+        className="relative z-10 mb-0 border-2 border-gold/25 p-1 bg-[#071633]/50 backdrop-blur-xl rounded-lg w-40 max-w-[320px] sm:max-w-95 shrink-0 shadow-[0_10px_30px_rgba(0,0,0,0.15)] overflow-hidden"
       >
-        <p className="text-white text-xs sm:text-sm font-serif tracking-wide truncate max-w-full">
-          {place?.location || "Jaipur, Rajasthan"}
-        </p>
+        <img
+          src={"/images/logo.jpeg"}
+          alt={place?.name || "Place image"}
+          className="w-full sm:h-20 object-cover rounded-lg"
+        />
       </motion.div>
 
       {/* Main Content */}
@@ -122,6 +109,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
           py-2
           sm:py-4
           lg:my-auto
+          flex-1 /* Added flex-1 to take available space */
         "
       >
         {/* Heading */}
@@ -131,9 +119,9 @@ export default function BookingFlowLeft({ place, itemVariants }) {
             text-white
             font-serif
             text-xl
-            sm:text-2xl
-            md:text-3xl
-            xl:text-4xl
+            sm:text-sm
+            md:text-sm
+            xl:text-sm
             leading-tight
             font-normal
             tracking-wide
@@ -161,11 +149,9 @@ export default function BookingFlowLeft({ place, itemVariants }) {
         </motion.h1>
 
         {/* Divider */}
-        <div className="h-[1px] w-12 sm:w-16 bg-gradient-to-r from-transparent via-gold/40 to-transparent my-3 sm:my-4" />
+        <div className="h-[1px] w-12 sm:w-16 bg-gradient-to-r from-transparent via-gold/40 to-transparent my-0 sm:my-2" />
 
-        {/* ============================================================
-            EVENT DETAILS — EQUAL HEIGHT HORIZONTAL CARDS
-        ============================================================ */}
+        {/* EVENT DETAILS — EQUAL HEIGHT HORIZONTAL CARDS */}
         <motion.div
           variants={itemVariants}
           className="
@@ -173,7 +159,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
             grid
             grid-cols-1
             md:grid-cols-2
-            gap-4
+            gap-2
             mt-1
             items-stretch
           "
@@ -201,6 +187,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
                 duration-300
                 hover:border-gold/50
                 hover:shadow-[0_15px_40px_-8px_rgba(212,175,55,0.25)]
+                [@media(max-height:800px)]:p-3  /* Reduced padding for 80% zoom */
               "
             >
               {/* Gold accent bar */}
@@ -216,18 +203,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
                 <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/40 flex items-center justify-center shrink-0 mt-0.5">
                   <Users size={13} className="text-gold" />
                 </div>
-                <h3
-                  className="
-                    text-gold
-                    font-serif
-                    font-bold
-                    text-[13px]
-                    sm:text-sm
-                    tracking-wide
-                    leading-snug
-                    flex-1
-                  "
-                >
+                <h3 className="text-gold font-serif font-bold text-[13px] sm:text-sm tracking-wide leading-snug flex-1">
                   {event.title}
                 </h3>
               </div>
@@ -256,14 +232,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
                 {event.details.map((detail, i) => (
                   <li
                     key={i}
-                    className="
-                      flex
-                      items-start
-                      gap-2.5
-                      text-sandstone/85
-                      text-[11px]
-                      leading-relaxed
-                    "
+                    className="flex items-start gap-2.5 text-sandstone/85 text-[11px] leading-relaxed"
                   >
                     <span className="text-gold mt-1.5 shrink-0 text-[6px]">
                       ◆
@@ -275,14 +244,9 @@ export default function BookingFlowLeft({ place, itemVariants }) {
             </div>
           ))}
         </motion.div>
-
-
-        
       </div>
 
-      {/* ============================================================
-          PLACE IMAGE — Bottom, fully visible
-      ============================================================ */}
+      {/* PLACE IMAGE — Bottom, fully visible */}
       <motion.div
         variants={itemVariants}
         whileHover={{
@@ -291,17 +255,12 @@ export default function BookingFlowLeft({ place, itemVariants }) {
         }}
         className="
           relative z-10
-          w-full
+          w-50
           max-w-[340px]
           sm:max-w-[400px]
           lg:max-w-[440px]
-
-          h-[120px]
-          sm:h-[140px]
-          md:h-[160px]
-          lg:h-[160px]
-          xl:h-[180px]
-
+          min-h-[80px]      /* Changed from fixed h to min-h */
+          h-auto        /* Allow it to auto-adjust */
           p-1.5
           bg-sandstone/5
           rounded-[18px]
@@ -313,7 +272,8 @@ export default function BookingFlowLeft({ place, itemVariants }) {
           flex
           items-center
           justify-center
-          mt-5
+          mt-2              /* Reduced from mt-5 */
+          [@media(max-height:800px)]:mt-1 /* Further reduced for 80% zoom */
         "
       >
         {place?.imageUrl ? (
@@ -323,8 +283,8 @@ export default function BookingFlowLeft({ place, itemVariants }) {
             priority
             alt={place?.name || "Place Image"}
             className="
-              w-full
-              h-full
+              w-50
+              h-auto
               object-cover
               rounded-[14px]
               sm:rounded-[18px]

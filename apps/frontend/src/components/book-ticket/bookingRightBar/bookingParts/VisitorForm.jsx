@@ -228,6 +228,7 @@ export default function VisitorForm({
                   <option value="CASH">Cash</option>
                   <option value="UPI">UPI</option>
                   <option value="ONLINE">Online Payment</option>
+                  <option value="FREE">Free</option>
                 </select>
 
                 <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-royal-blue/50 text-sm">

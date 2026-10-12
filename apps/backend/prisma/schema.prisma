@@ -246,5 +246,6 @@ enum BookingType {
 enum PaymentMethod {
   CASH
   UPI
+  FREE
   ONLINE
 }
