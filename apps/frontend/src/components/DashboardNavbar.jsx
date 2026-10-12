@@ -23,7 +23,7 @@ export default function DashboardNavbar() {
     if (pathname === "/dashboard/ticket") return "Ticket Types";
     if (pathname === "/dashboard/addon") return "Addon Management";
     if (pathname === "/dashboard/booking") return "Bookings";
-    if (pathname === "/dashboard/ticket-scanner") return "Ticket Scanner";
+    if (pathname === "/dashboard/ticket-scanner") return "Ticket Scanner--";
     return "Dashboard";
   };
 
