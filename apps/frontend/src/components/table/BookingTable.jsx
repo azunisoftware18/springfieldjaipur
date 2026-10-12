@@ -313,7 +313,7 @@ import {
 } from "./core";
 
 import ActionMenu from "../common/ActionMenu";
-import { Eye, XCircle, Filter } from "lucide-react";
+import { Eye, XCircle, Filter, Trash2 } from "lucide-react";
 
 import { useState, useMemo, useEffect } from "react";
 
@@ -326,7 +326,7 @@ export default function BookingTable({
   loading = false,
   ticketTypes = [],
   onView,
-  onCancel,
+  onDelete,
   paginationProps,
   onFilteredDataChange,
 }) {
@@ -603,15 +603,12 @@ return (
                         icon: Eye,
                         onClick: () => onView?.(booking),
                       },
-                      // {
-                      //   label: "Cancel Booking",
-                      //   icon: XCircle,
-                      //   danger: true,
-                      //   onClick: () => onCancel?.(booking),
-                      //   disabled:
-                      //     booking.status === "CANCELLED" ||
-                      //     booking.status === "FAILED",
-                      // },
+                      {
+                        label: "Delete Booking",
+                        icon: Trash2,
+                        danger: true,
+                        onClick: () => onDelete?.(booking),
+                      },
                     ]}
                   />
                 )}

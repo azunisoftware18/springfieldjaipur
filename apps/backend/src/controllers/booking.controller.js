@@ -137,7 +137,17 @@ class BookingController {
     return res.json(ApiResponse.success(null, "Booking cancelled"));
   };
 
-  
+  // ============================================================
+  // DELETE BOOKING
+  // ============================================================
+  static deleteBooking = async (req, res) => {
+    const { id } = req.params;
+
+    const data = await BookingService.deleteBooking(id);
+
+    return res.json(ApiResponse.success(data, "Booking deleted"));
+  };
+
   // CASHFREE PAYMENT VERIFICATION
   static verifyCashfreePayment = async (req, res) => {
     const { orderId } = req.body;

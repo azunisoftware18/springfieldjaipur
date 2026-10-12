@@ -13,6 +13,7 @@ import { Download, FileSpreadsheet, PlusCircle } from "lucide-react";
 import * as XLSX from "xlsx";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
+import { useDeleteBooking } from "@/lib/mutations/useBooking";
 
 export default function Page() {
   const currentPlace = useSelector((state) => state.place.currentPlace);
@@ -20,6 +21,7 @@ export default function Page() {
   const placeId = currentPlace?.id;
 
   const { data: bookings, isLoading } = useBookings();
+  const deleteBooking = useDeleteBooking();
 
   const router = useRouter();
 
@@ -103,6 +105,28 @@ export default function Page() {
     },
     [],
   );
+
+  const handleDeleteBooking = async (booking) => {
+    const amount = Number(booking.totalAmount || 0).toLocaleString("en-IN");
+    const confirmed = window.confirm(
+      `Permanently delete the booking for ${booking.name || "this customer"} (₹${amount})? This will also delete its tickets and scan records.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteBooking.mutateAsync(booking.id);
+      window.alert("Booking deleted successfully.");
+    } catch (error) {
+      window.alert(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Could not delete the booking. Please try again.",
+      );
+    }
+  };
 
   // =========================================================
   // FORMAT DATA FOR EXCEL
@@ -259,16 +283,13 @@ export default function Page() {
           ================================================= */}
 
           <div className="flex gap-2">
-            <div className=" rounded-x border border-black p-2  ">
-
-              <Link
-                href={`/book-tickets/${placeId}`}
-                iconPosition="left"
-                icon={PlusCircle}
-                text="Ticket Book"
-              >
-                {/* <PlusCircle className="w-4 h-4" /> */}
-                Ticket Book
+            <div className="">
+              <Link href={`/book-tickets/${placeId}`}>
+                <Button
+                  icon={PlusCircle}
+                  iconPosition="left"
+                  text="Ticket Book"
+                />
               </Link>
             </div>
 
@@ -446,6 +467,7 @@ export default function Page() {
           onView={(booking) => {
             router.push(`/dashboard/booking/${booking.id}`);
           }}
+          onDelete={handleDeleteBooking}
           paginationProps={{
             page,
             totalPages,

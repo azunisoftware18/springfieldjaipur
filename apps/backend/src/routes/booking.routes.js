@@ -118,6 +118,17 @@ router.get(
 );
 
 /**
+ * Delete a booking and its related tickets
+ * Admin only
+ */
+router.delete(
+  "/:id",
+  AuthMiddleware.isAuthenticated,
+  AuthMiddleware.authorize(["ADMIN"]),
+  asyncHandler(BookingController.deleteBooking)
+);
+
+/**
  * Get booking by ID
  */
 router.get("/:id", asyncHandler(BookingController.getById));

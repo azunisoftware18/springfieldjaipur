@@ -980,6 +980,47 @@ We can't wait to welcome you! 🎉`;
       addons: bookingAddon,
     };
   }
+
+  // ============================================================
+  // DELETE BOOKING
+  // ============================================================
+  static async deleteBooking(id) {
+    return prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+
+      if (!booking) {
+        throw ApiError.notFound("Booking not found");
+      }
+
+      const tickets = await tx.ticket.findMany({
+        where: { bookingId: id },
+        select: { id: true },
+      });
+
+      if (tickets.length > 0) {
+        await tx.scanLog.deleteMany({
+          where: {
+            ticketId: {
+              in: tickets.map((ticket) => ticket.id),
+            },
+          },
+        });
+      }
+
+      await tx.ticket.deleteMany({
+        where: { bookingId: id },
+      });
+
+      await tx.booking.delete({
+        where: { id },
+      });
+
+      return { id: booking.id };
+    });
+  }
 }
 
 export default BookingService;
