@@ -14,7 +14,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
       time: "6:00 PM – 11:00 PM",
       details: [
         "Eligible: Class 6 to Class 12 students and alumni",
-        "Free Entry for Kids below 7 years",
+        "Alumini's kids below 7 years free entry",
         "Male Entry Fee: ₹350 per person",
         "Female Entry Fee: ₹350 per person",
         "Parents: Not allowed Dandiya Sticks",
@@ -29,7 +29,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
         "Eligible: Nursery to Class 5 students",
         "Entry Fee: Free For Students",
         "Parents: Allowed",
-        "Parent Entry Fee: ₹350 per person",
+        "Parent Entry Fee: ₹350 for 2 pax",
         "Pair of Dandiya Sticks: ₹50 per pair",
       ],
     },
