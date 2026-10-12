@@ -79,7 +79,7 @@ export default function DashboardNavbar() {
     { name: "Ticket Type", href: "/dashboard/ticket", icon: Ticket },
     { name: "Addon", href: "/dashboard/addon", icon: BookOpen },
     { name: "Booking", href: "/dashboard/booking", icon: BookOpen },
-    { name: "Ticket Scanner", href: "/dashboard/ticket-scanner", icon: ScanLine },
+    { name: "Ticket Scanner--", href: "/dashboard/ticket-scanner", icon: ScanLine },
   ];
 
   return (
