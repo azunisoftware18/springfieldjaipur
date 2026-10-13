@@ -17,7 +17,7 @@ export default function BookingFlowLeft({ place, itemVariants }) {
         "Alumini's kids below 7 years free entry",
         "Male Entry Fee: ₹350 per person",
         "Female Entry Fee: ₹350 per person",
-        "Parents: Not allowed Dandiya Sticks",
+        "Parents: Not allowed",
         "Pair of Dandiya Sticks: ₹50 per pair",
       ],
     },
