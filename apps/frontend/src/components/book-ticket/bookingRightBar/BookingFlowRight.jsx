@@ -353,11 +353,14 @@ export default function BookingFlowRight() {
 
         const paymentSessionId =
           paymentData?.paymentSessionId || paymentData?.payment_session_id;
+
+          
         const sessionEnvironment = paymentData?.environment
           ?.trim()
           .toUpperCase();
         const cashfreeMode =
-          sessionEnvironment === "PRODUCTION" || sessionEnvironment === "SANDBOX"
+          sessionEnvironment === "PRODUCTION" ||
+          sessionEnvironment === "SANDBOX"
             ? sessionEnvironment.toLowerCase()
             : configuredCashfreeEnv?.trim().toUpperCase() === "PRODUCTION"
               ? "production"
@@ -406,7 +409,7 @@ export default function BookingFlowRight() {
         // ------------------------------------------------------
         // STEP D: OPEN CHECKOUT
         // ------------------------------------------------------
-        console.log("10. Opening Cashfree checkout...");
+        console.log("10. Opening Cashfree checkout...",paymentSessionId);
 
         const checkoutResult = await cashfree.checkout({
           paymentSessionId,
