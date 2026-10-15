@@ -318,65 +318,6 @@ class BookingService {
       };
     }
 
-    // ============================================================
-    // ONLINE → EASEBUZZ
-    // ============================================================
-
-    // if (paymentMethod === "ONLINE") {
-    //   try {
-    //     const orderRequest = {
-    //       order_id: booking.txnId,
-    //       order_amount: Number(booking.totalAmount.toFixed(2)),
-    //       order_currency: "INR",
-
-    //       customer_details: {
-    //         customer_id: user?.id
-    //           ? String(user.id)
-    //           : `guest_${booking.id}`,
-
-    //         customer_name: name,
-    //         customer_email: email,
-    //         customer_phone: phone,
-    //       },
-
-    //       order_meta: {
-    //         return_url:
-    //           `${envConfig.FRONTEND_URL}/payment-success/return` +
-    //           `?order_id=${booking.txnId}`,
-    //       },
-
-    //       order_note: `Ticket booking ${booking.id}`,
-    //     };
-
-    //     const response = await cashfree.PGCreateOrder(orderRequest);
-    //     const cashfreeOrder = response.data;
-
-    //     return {
-    //       booking,
-    //       isCashBooking: false,
-    //       isOnlinePayment: true,
-    //       payment: {
-    //         provider: "CASHFREE",
-    //         orderId: cashfreeOrder.order_id,
-    //         paymentSessionId: cashfreeOrder.payment_session_id,
-    //         amount: booking.totalAmount,
-    //         currency: "INR",
-    //       },
-    //     };
-    //   } catch (error) {
-    //     console.error(
-    //       "Cashfree order creation failed:",
-    //       error.response?.data || error.message
-    //     );
-
-    //     // Booking ko unpaid hi rakhein.
-    //     throw ApiError.badRequest(
-    //       "Unable to initialize online payment. Please try again."
-    //     );
-    //   }
-    // }
-    //   }
-
     if (paymentMethod === "ONLINE") {
       const requestId = crypto.randomUUID();
 
@@ -441,8 +382,27 @@ class BookingService {
           customerPhoneLength: String(phone).length,
         });
 
-        const response = await cashfree.PGCreateOrder(orderRequest);
+        let response;
 
+        try {
+          response = await cashfree.PGCreateOrder(orderRequest);
+        } catch (error) {
+          console.error("[CASHFREE][AUTH_DIAGNOSTIC]", {
+            bookingId: booking.id,
+            orderId: booking.txnId,
+            httpStatus: error?.response?.status ?? null,
+            errorName: error?.name,
+            errorMessage: error?.message,
+            requestId:
+              error?.response?.headers?.["x-request-id"] ??
+              error?.response?.headers?.["x-cf-request-id"] ??
+              null,
+            providerCode: error?.response?.data?.code ?? null,
+            providerType: error?.response?.data?.type ?? null,
+          });
+
+          throw error;
+        }
         const cashfreeOrder = response?.data;
 
         console.info("[CASHFREE][CREATE_ORDER][RESPONSE]", {

@@ -1,53 +1,31 @@
-
-// import { Cashfree } from "cashfree-pg";
-// import { envConfig } from "./env.config.js";
-
-// const environment =
-//   envConfig.CASHFREE_ENV === "PRODUCTION"
-//     ? Cashfree.PRODUCTION
-//     : Cashfree.SANDBOX;
-
-// export const cashfree = new Cashfree(
-//   environment,
-//   envConfig.CASHFREE_CLIENT_ID,
-//   envConfig.CASHFREE_CLIENT_SECRET
-// );
-
-
-
-
-
-
 import { Cashfree } from "cashfree-pg";
 import { envConfig } from "./env.config.js";
 
-const environment =
-  envConfig.CASHFREE_ENV?.trim().toUpperCase() === "PRODUCTION"
-    ? Cashfree.PRODUCTION
-    : Cashfree.SANDBOX;
+const mode = envConfig.CASHFREE_ENV?.trim().toUpperCase();
 
-if (
-  !envConfig.CASHFREE_CLIENT_ID ||
-  !envConfig.CASHFREE_CLIENT_SECRET
-) {
+if (!["SANDBOX", "PRODUCTION"].includes(mode)) {
   throw new Error(
-    "[CASHFREE CONFIG] Client ID or Client Secret is missing"
+    "[CASHFREE CONFIG] Invalid CASHFREE_ENV. Use PRODUCTION or SANDBOX."
   );
 }
 
-console.info("[CASHFREE CONFIG]", {
-  environment:
-    envConfig.CASHFREE_ENV?.trim().toUpperCase(),
-  sdkEnvironment:
-    environment === Cashfree.PRODUCTION
-      ? "PRODUCTION"
-      : "SANDBOX",
-  hasClientId: Boolean(envConfig.CASHFREE_CLIENT_ID),
-  hasClientSecret: Boolean(envConfig.CASHFREE_CLIENT_SECRET),
-});
+const clientId = envConfig.CASHFREE_CLIENT_ID?.trim();
+const clientSecret = envConfig.CASHFREE_CLIENT_SECRET?.trim();
 
-export const cashfree = new Cashfree(
-  environment,
-  envConfig.CASHFREE_CLIENT_ID,
-  envConfig.CASHFREE_CLIENT_SECRET
-);
+if (!clientId || !clientSecret) {
+  throw new Error("[CASHFREE CONFIG] Client ID or Client Secret is missing");
+}
+
+const environment =
+  mode === "PRODUCTION" ? Cashfree.PRODUCTION : Cashfree.SANDBOX;
+
+export const cashfree = new Cashfree(environment, clientId, clientSecret);
+
+console.info("[CASHFREE CONFIG]", {
+  configuredEnvironment: mode,
+  sdkEnvironment: mode === "PRODUCTION" ? "PRODUCTION" : "SANDBOX",
+  clientIdPresent: Boolean(clientId),
+  clientIdLength: clientId.length,
+  clientSecretPresent: Boolean(clientSecret),
+  clientSecretLength: clientSecret.length,
+});
