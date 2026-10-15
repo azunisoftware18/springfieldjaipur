@@ -34,6 +34,7 @@ export const cashfreeApi = axios.create({
 });
 
 console.info("[CASHFREE CONFIG]", {
+  cashfreeApi,
   configuredEnvironment: mode,
   baseURL,
   appIdPresent: Boolean(appId),

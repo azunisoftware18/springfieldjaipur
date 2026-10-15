@@ -325,21 +325,6 @@ class BookingService {
         // Check required configuration without exposing credentials.
         const frontendUrl = envConfig.FRONTEND_URL;
 
-        console.info("[CASHFREE][CREATE_ORDER][START]", {
-          requestId,
-          environment: process.env.NODE_ENV,
-          bookingId: booking.id,
-          txnId: booking.txnId,
-          paymentMethod: booking.paymentMethod,
-          bookingStatus: booking.status,
-          amount: Number(booking.totalAmount),
-          currency: "INR",
-          hasFrontendUrl: Boolean(frontendUrl),
-          hasCashfreeClientId: Boolean(process.env.CASHFREE_CLIENT_ID),
-          hasCashfreeClientSecret: Boolean(process.env.CASHFREE_CLIENT_SECRET),
-          timestamp: new Date().toISOString(),
-        });
-
         if (!frontendUrl) {
           throw new Error("FRONTEND_URL is missing");
         }
@@ -367,38 +352,11 @@ class BookingService {
           order_note: `Ticket booking ${booking.id}`,
         };
 
-        console.info("[CASHFREE][CREATE_ORDER][REQUEST]", {
-          requestId,
-          orderId: orderRequest.order_id,
-          amount: orderRequest.order_amount,
-          currency: orderRequest.order_currency,
-          returnUrlOrigin: returnUrl.origin,
-          returnUrlPath: returnUrl.pathname,
-          customerIdPresent: Boolean(orderRequest.customer_details.customer_id),
-          customerNamePresent: Boolean(name),
-          customerEmailPresent: Boolean(email),
-          customerPhoneLength: String(phone).length,
-        });
-
         let response;
 
         try {
           response = await cashfreeApi.post("/orders", orderRequest);
         } catch (error) {
-          console.error("[CASHFREE][AUTH_DIAGNOSTIC]", {
-            bookingId: booking.id,
-            orderId: booking.txnId,
-            httpStatus: error?.response?.status ?? null,
-            errorName: error?.name,
-            errorMessage: error?.message,
-            requestId:
-              error?.response?.headers?.["x-request-id"] ??
-              error?.response?.headers?.["x-cf-request-id"] ??
-              null,
-            providerCode: error?.response?.data?.code ?? null,
-            providerType: error?.response?.data?.type ?? null,
-          });
-
           throw error;
         }
         const cashfreeOrder = response?.data;
