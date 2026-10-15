@@ -12,7 +12,10 @@ import path from "path";
 import { upload } from "../utils/s3Service.js";
 import WhatsappService from "./whatsapp.service.js";
 import EmailService from "./Email.service.js";
-import { cashfreeApi } from "../config/cashfree.config.js";
+import {
+  cashfreeApi,
+  cashfreeEnvironment,
+} from "../config/cashfree.config.js";
 
 class BookingService {
   // ============================================================
@@ -408,6 +411,7 @@ class BookingService {
             paymentSessionId: cashfreeOrder.payment_session_id,
             amount: Number(booking.totalAmount),
             currency: "INR",
+            environment: cashfreeEnvironment,
           },
         };
       } catch (error) {

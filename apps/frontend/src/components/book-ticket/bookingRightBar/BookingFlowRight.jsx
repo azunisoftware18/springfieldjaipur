@@ -223,15 +223,10 @@ export default function BookingFlowRight() {
     try {
       console.group(`[${debugId}] Booking / Cashfree Debug`);
 
-      const rawEnv = process.env.NEXT_PUBLIC_CASHFREE_ENV;
-      const cashfreeMode =
-        rawEnv?.trim().toUpperCase() === "PRODUCTION"
-          ? "production"
-          : "sandbox";
+      const configuredCashfreeEnv = process.env.NEXT_PUBLIC_CASHFREE_ENV;
 
       console.log("1. Environment:", {
-        configuredEnv: rawEnv || "NOT SET",
-        selectedMode: cashfreeMode,
+        configuredEnv: configuredCashfreeEnv || "NOT SET",
         isLoggedIn,
         currentOrigin:
           typeof window !== "undefined" ? window.location.origin : "SSR",
@@ -358,6 +353,15 @@ export default function BookingFlowRight() {
 
         const paymentSessionId =
           paymentData?.paymentSessionId || paymentData?.payment_session_id;
+        const sessionEnvironment = paymentData?.environment
+          ?.trim()
+          .toUpperCase();
+        const cashfreeMode =
+          sessionEnvironment === "PRODUCTION" || sessionEnvironment === "SANDBOX"
+            ? sessionEnvironment.toLowerCase()
+            : configuredCashfreeEnv?.trim().toUpperCase() === "PRODUCTION"
+              ? "production"
+              : "sandbox";
 
         console.log("7. Cashfree session diagnostics:", {
           hasPaymentObject: Boolean(paymentData),
@@ -365,6 +369,7 @@ export default function BookingFlowRight() {
           hasPaymentSessionId: Boolean(paymentSessionId),
           sessionIdLength:
             typeof paymentSessionId === "string" ? paymentSessionId.length : 0,
+          sessionEnvironment: sessionEnvironment || "NOT PROVIDED",
           mode: cashfreeMode,
         });
 

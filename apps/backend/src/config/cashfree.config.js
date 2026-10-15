@@ -23,6 +23,8 @@ const baseURL =
     ? "https://api.cashfree.com/pg"
     : "https://sandbox.cashfree.com/pg";
 
+export const cashfreeEnvironment = mode.toLowerCase();
+
 export const cashfreeApi = axios.create({
   baseURL,
   headers: {
@@ -34,7 +36,6 @@ export const cashfreeApi = axios.create({
 });
 
 console.info("[CASHFREE CONFIG]", {
-  cashfreeApi,
   configuredEnvironment: mode,
   baseURL,
   appIdPresent: Boolean(appId),
