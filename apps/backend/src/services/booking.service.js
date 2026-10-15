@@ -426,6 +426,8 @@ class BookingService {
           order_note: `Ticket booking ${booking.id}`,
         };
 
+        console.log(orderRequest, "Cashfree order request");
+
         console.info("[CASHFREE][CREATE_ORDER][REQUEST]", {
           requestId,
           orderId: orderRequest.order_id,
@@ -496,23 +498,43 @@ class BookingService {
         // Log provider diagnostics, but NEVER log credentials or full request data.
         console.error("[CASHFREE][CREATE_ORDER][FAILED]", {
           requestId,
+
+          // Booking details
           bookingId: booking.id,
           orderId: booking.txnId,
+
+          // Cashfree ko bheja gaya payload
+          orderPayload: {
+            order_id: booking.txnId,
+            order_amount: Number(Number(booking.totalAmount).toFixed(2)),
+            order_currency: "INR",
+
+            customer_details: {
+              customer_id: user?.id ? String(user.id) : `guest_${booking.id}`,
+              customer_name: name,
+              customer_email: email,
+              customer_phone: String(phone),
+            },
+
+            order_meta: {
+              return_url: envConfig.FRONTEND_URL
+                ? new URL(
+                    "/payment-success/return",
+                    envConfig.FRONTEND_URL
+                  ).toString() +
+                  `?order_id=${encodeURIComponent(booking.txnId)}`
+                : null,
+            },
+
+            order_note: `Ticket booking ${booking.id}`,
+          },
+
+          // Cashfree error response
           errorName: error?.name,
           errorMessage: error?.message,
-          httpStatus:
-            error?.response?.status ??
-            error?.status ??
-            error?.statusCode ??
-            null,
-          providerCode:
-            error?.response?.data?.code ?? error?.response?.data?.type ?? null,
-          providerMessage:
-            error?.response?.data?.message ??
-            error?.response?.data?.message_description ??
-            error?.response?.data?.error ??
-            null,
+          httpStatus: error?.response?.status ?? null,
           providerResponse: error?.response?.data ?? null,
+
           timestamp: new Date().toISOString(),
         });
 
