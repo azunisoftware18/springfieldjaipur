@@ -1,4 +1,4 @@
-import { Cashfree } from "cashfree-pg";
+import axios from "axios";
 import { envConfig } from "./env.config.js";
 
 const mode = envConfig.CASHFREE_ENV?.trim().toUpperCase();
@@ -18,14 +18,24 @@ if (!appId || !secretKey) {
   );
 }
 
-const environment =
-  mode === "PRODUCTION" ? Cashfree.PRODUCTION : Cashfree.SANDBOX;
+const baseURL =
+  mode === "PRODUCTION"
+    ? "https://api.cashfree.com/pg"
+    : "https://sandbox.cashfree.com/pg";
 
-export const cashfree = new Cashfree(environment, appId, secretKey);
+export const cashfreeApi = axios.create({
+  baseURL,
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-version": "2025-01-01",
+    "x-client-id": appId,
+    "x-client-secret": secretKey,
+  },
+});
 
 console.info("[CASHFREE CONFIG]", {
   configuredEnvironment: mode,
-  sdkEnvironment: mode === "PRODUCTION" ? "PRODUCTION" : "SANDBOX",
+  baseURL,
   appIdPresent: Boolean(appId),
   secretKeyPresent: Boolean(secretKey),
 });

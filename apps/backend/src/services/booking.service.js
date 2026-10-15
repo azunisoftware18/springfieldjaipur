@@ -12,7 +12,7 @@ import path from "path";
 import { upload } from "../utils/s3Service.js";
 import WhatsappService from "./whatsapp.service.js";
 import EmailService from "./Email.service.js";
-import { cashfree } from "../config/cashfree.config.js";
+import { cashfreeApi } from "../config/cashfree.config.js";
 
 class BookingService {
   // ============================================================
@@ -367,8 +367,6 @@ class BookingService {
           order_note: `Ticket booking ${booking.id}`,
         };
 
-        console.log(orderRequest, "Cashfree order request");
-
         console.info("[CASHFREE][CREATE_ORDER][REQUEST]", {
           requestId,
           orderId: orderRequest.order_id,
@@ -385,7 +383,7 @@ class BookingService {
         let response;
 
         try {
-          response = await cashfree.PGCreateOrder(orderRequest);
+          response = await cashfreeApi.post("/orders", orderRequest);
         } catch (error) {
           console.error("[CASHFREE][AUTH_DIAGNOSTIC]", {
             bookingId: booking.id,
@@ -459,47 +457,25 @@ class BookingService {
         console.error("[CASHFREE][CREATE_ORDER][FAILED]", {
           requestId,
 
-          // Booking details
           bookingId: booking.id,
           orderId: booking.txnId,
-
-          // Cashfree ko bheja gaya payload
-          orderPayload: {
-            order_id: booking.txnId,
-            order_amount: Number(Number(booking.totalAmount).toFixed(2)),
-            order_currency: "INR",
-
-            customer_details: {
-              customer_id: user?.id ? String(user.id) : `guest_${booking.id}`,
-              customer_name: name,
-              customer_email: email,
-              customer_phone: String(phone),
-            },
-
-            order_meta: {
-              return_url: envConfig.FRONTEND_URL
-                ? new URL(
-                    "/payment-success/return",
-                    envConfig.FRONTEND_URL
-                  ).toString() +
-                  `?order_id=${encodeURIComponent(booking.txnId)}`
-                : null,
-            },
-
-            order_note: `Ticket booking ${booking.id}`,
-          },
-
-          // Cashfree error response
           errorName: error?.name,
           errorMessage: error?.message,
           httpStatus: error?.response?.status ?? null,
-          providerResponse: error?.response?.data ?? null,
+          providerCode: error?.response?.data?.code ?? null,
+          providerType: error?.response?.data?.type ?? null,
+          providerMessage: error?.response?.data?.message ?? null,
+          cashfreeRequestId:
+            error?.response?.headers?.["x-request-id"] ??
+            error?.response?.headers?.["x-cf-request-id"] ??
+            null,
 
           timestamp: new Date().toISOString(),
         });
 
-        throw ApiError.badRequest(
-          "Unable to initialize online payment. Please try again."
+        throw new ApiError(
+          "Unable to initialize online payment. Please try again.",
+          502
         );
       }
     }
@@ -522,7 +498,9 @@ class BookingService {
       return booking;
     }
 
-    const response = await cashfree.PGFetchOrder(orderId);
+    const response = await cashfreeApi.get(
+      `/orders/${encodeURIComponent(orderId)}`
+    );
     const order = response.data;
 
     // Verify order identity and amount.
