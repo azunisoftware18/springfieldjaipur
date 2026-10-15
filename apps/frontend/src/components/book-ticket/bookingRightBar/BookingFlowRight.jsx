@@ -70,9 +70,176 @@ export default function BookingFlowRight() {
   // ============================================================
   // FINAL BOOKING
   // ============================================================
+  // const handleFinalBooking = async (visitorInfo) => {
+  //   try {
+  //     const paymentMethod = isLoggedIn ? visitorInfo?.paymentMethod : "ONLINE";
+
+  //     if (!["CASH", "UPI", "ONLINE", "FREE"].includes(paymentMethod)) {
+  //       throw new Error("Please select a valid payment method");
+  //     }
+
+  //     if (!isLoggedIn && paymentMethod !== "ONLINE") {
+  //       throw new Error("Guest users can only use online payment");
+  //     }
+
+  //     // if (isLoggedIn && !["CASH", "UPI", "ONLINE"].includes(paymentMethod)) {
+  //     //   throw new Error("Please select Cash or UPI payment");
+  //     // }
+
+  //     if (!placeId) {
+  //       throw new Error("Place information is not available");
+  //     }
+
+  //     if (!reduxData?.date || !reduxData?.slot?.time) {
+  //       throw new Error("Please select a valid date and slot");
+  //     }
+
+  //     const tickets = Object.entries(reduxData?.tickets || {})
+  //       .filter(([, quantity]) => Number(quantity) > 0)
+  //       .map(([typeId, quantity]) => ({
+  //         typeId,
+  //         quantity: Number(quantity),
+  //       }));
+
+  //     if (!tickets.length) {
+  //       throw new Error("Please select at least one ticket");
+  //     }
+
+  //     const addons = Object.entries(reduxData?.addons || {})
+  //       .filter(([, quantity]) => Number(quantity) > 0)
+  //       .map(([addonId, quantity]) => ({
+  //         addonId,
+  //         quantity: Number(quantity),
+  //       }));
+
+  //     const slotDateTime = `${reduxData.date}T${reduxData.slot.time}:00.000Z`;
+
+  //     const totalSeats = tickets.reduce(
+  //       (total, ticket) => total + Number(ticket.quantity),
+  //       0,
+  //     );
+
+  //     const payload = {
+  //       placeId,
+  //       slotDateTime,
+  //       name: visitorInfo?.name,
+  //       email: visitorInfo?.email,
+  //       phone: visitorInfo?.phone,
+  //       paymentMethod,
+  //       bookingType: "TICKET",
+  //       totalAmount: parseFloat(reduxData?.totalAmount || 0),
+  //       totalSeats,
+  //       tickets,
+  //       addons,
+  //     };
+
+  //     console.log("BOOKING PAYLOAD:", payload);
+
+  //     const res = await createBooking(payload);
+
+  //     if (!res?.success) {
+  //       throw new Error(res?.message || "Booking failed");
+  //     }
+
+  //     const bookingId =
+  //       res?.data?.bookingId || res?.data?.booking?.id || res?.data?.id;
+
+  //     if (paymentMethod === "CASH") {
+  //       if (!bookingId) {
+  //         throw new Error("Booking ID not received");
+  //       }
+  //       window.location.href = `/payment-success?bookingId=${bookingId}`;
+  //       return;
+  //     }
+
+  //     if (paymentMethod === "UPI") {
+  //       if (!bookingId) {
+  //         throw new Error("Booking ID not received");
+  //       }
+  //       window.location.href = `/payment-success?bookingId=${bookingId}`;
+  //       return;
+  //     }
+
+  //     if (paymentMethod === "FREE") {
+  //       if (!bookingId) {
+  //         throw new Error("Booking ID not received");
+  //       }
+  //       window.location.href = `/payment-success?bookingId=${bookingId}`;
+  //       return;
+  //     }
+
+  //     if (paymentMethod === "ONLINE") {
+  //       const responseData = res?.data?.data ?? res?.data ?? res;
+  //       const paymentData = responseData?.payment;
+
+  //       const paymentSessionId =
+  //         paymentData?.paymentSessionId || paymentData?.payment_session_id;
+
+  //       if (!paymentSessionId) {
+  //         console.error("Cashfree response:", res);
+  //         throw new Error(
+  //           "Cashfree payment session ID not received. Check backend response.",
+  //         );
+  //       }
+
+  //       const cashfree = await load({
+  //         mode:
+  //           process.env.NEXT_PUBLIC_CASHFREE_ENV === "PRODUCTION"
+  //             ? "production"
+  //             : "sandbox",
+  //       });
+
+  //       if (!cashfree) {
+  //         throw new Error("Cashfree checkout could not be initialized");
+  //       }
+
+  //       const checkoutResult = await cashfree.checkout({
+  //         paymentSessionId,
+  //         redirectTarget: "_self",
+  //       });
+
+  //       // Cashfree normally redirects the user to its checkout.
+  //       // If checkout returns an error, show it instead of silently continuing.
+  //       if (checkoutResult?.error) {
+  //         throw new Error(
+  //           checkoutResult.error.message || "Unable to open Cashfree checkout",
+  //         );
+  //       }
+
+  //       return;
+  //     }
+  //   } catch (error) {
+  //     console.error("Booking Error:", error);
+  //     alert(error?.message || "Booking failed. Please try again.");
+  //   }
+
+  //   console.log(cashfree);
+
+  // };
+
   const handleFinalBooking = async (visitorInfo) => {
+    const debugId = `CF-${Date.now()}`;
+
     try {
+      console.group(`[${debugId}] Booking / Cashfree Debug`);
+
+      const rawEnv = process.env.NEXT_PUBLIC_CASHFREE_ENV;
+      const cashfreeMode =
+        rawEnv?.trim().toUpperCase() === "PRODUCTION"
+          ? "production"
+          : "sandbox";
+
+      console.log("1. Environment:", {
+        configuredEnv: rawEnv || "NOT SET",
+        selectedMode: cashfreeMode,
+        isLoggedIn,
+        currentOrigin:
+          typeof window !== "undefined" ? window.location.origin : "SSR",
+      });
+
       const paymentMethod = isLoggedIn ? visitorInfo?.paymentMethod : "ONLINE";
+
+      console.log("2. Payment method:", paymentMethod);
 
       if (!["CASH", "UPI", "ONLINE", "FREE"].includes(paymentMethod)) {
         throw new Error("Please select a valid payment method");
@@ -81,10 +248,6 @@ export default function BookingFlowRight() {
       if (!isLoggedIn && paymentMethod !== "ONLINE") {
         throw new Error("Guest users can only use online payment");
       }
-
-      // if (isLoggedIn && !["CASH", "UPI", "ONLINE"].includes(paymentMethod)) {
-      //   throw new Error("Please select Cash or UPI payment");
-      // }
 
       if (!placeId) {
         throw new Error("Place information is not available");
@@ -115,7 +278,7 @@ export default function BookingFlowRight() {
       const slotDateTime = `${reduxData.date}T${reduxData.slot.time}:00.000Z`;
 
       const totalSeats = tickets.reduce(
-        (total, ticket) => total + Number(ticket.quantity),
+        (total, ticket) => total + ticket.quantity,
         0,
       );
 
@@ -127,90 +290,158 @@ export default function BookingFlowRight() {
         phone: visitorInfo?.phone,
         paymentMethod,
         bookingType: "TICKET",
-        totalAmount: parseFloat(reduxData?.totalAmount || 0),
+        totalAmount: Number(reduxData?.totalAmount || 0),
         totalSeats,
         tickets,
         addons,
       };
 
-      console.log("BOOKING PAYLOAD:", payload);
+      // Avoid logging visitor PII.
+      console.log("3. Booking payload summary:", {
+        placeId: payload.placeId,
+        slotDateTime: payload.slotDateTime,
+        paymentMethod: payload.paymentMethod,
+        totalAmount: payload.totalAmount,
+        totalSeats: payload.totalSeats,
+        ticketCount: payload.tickets.length,
+        addonCount: payload.addons.length,
+      });
+
+      // --------------------------------------------------------
+      // STEP A: CREATE BOOKING / PAYMENT SESSION
+      // --------------------------------------------------------
+      console.log("4. Calling createBooking API...");
 
       const res = await createBooking(payload);
 
+      console.log("5. Booking API response:", {
+        success: res?.success,
+        message: res?.message,
+        topLevelKeys: Object.keys(res || {}),
+        dataKeys: Object.keys(res?.data || {}),
+        nestedDataKeys: Object.keys(res?.data?.data || {}),
+        // Do not log the full payment session ID.
+      });
+
       if (!res?.success) {
-        throw new Error(res?.message || "Booking failed");
+        throw new Error(res?.message || "Booking API failed");
       }
+
+      const responseData = res?.data?.data ?? res?.data ?? res;
 
       const bookingId =
-        res?.data?.bookingId || res?.data?.booking?.id || res?.data?.id;
+        responseData?.bookingId ||
+        responseData?.booking?.id ||
+        responseData?.id;
 
-      if (paymentMethod === "CASH") {
+      console.log("6. Booking ID received:", Boolean(bookingId));
+
+      if (
+        paymentMethod === "CASH" ||
+        paymentMethod === "UPI" ||
+        paymentMethod === "FREE"
+      ) {
         if (!bookingId) {
           throw new Error("Booking ID not received");
         }
-        window.location.href = `/payment-success?bookingId=${bookingId}`;
+
+        window.location.href = `/payment-success?bookingId=${encodeURIComponent(bookingId)}`;
+
         return;
       }
 
-      if (paymentMethod === "UPI") {
-        if (!bookingId) {
-          throw new Error("Booking ID not received");
-        }
-        window.location.href = `/payment-success?bookingId=${bookingId}`;
-        return;
-      }
-
-      if (paymentMethod === "FREE") {
-        if (!bookingId) {
-          throw new Error("Booking ID not received");
-        }
-        window.location.href = `/payment-success?bookingId=${bookingId}`;
-        return;
-      }
-
+      // --------------------------------------------------------
+      // STEP B: VALIDATE CASHFREE SESSION
+      // --------------------------------------------------------
       if (paymentMethod === "ONLINE") {
-        const responseData = res?.data?.data ?? res?.data ?? res;
         const paymentData = responseData?.payment;
 
         const paymentSessionId =
           paymentData?.paymentSessionId || paymentData?.payment_session_id;
 
+        console.log("7. Cashfree session diagnostics:", {
+          hasPaymentObject: Boolean(paymentData),
+          paymentKeys: Object.keys(paymentData || {}),
+          hasPaymentSessionId: Boolean(paymentSessionId),
+          sessionIdLength:
+            typeof paymentSessionId === "string" ? paymentSessionId.length : 0,
+          mode: cashfreeMode,
+        });
+
         if (!paymentSessionId) {
-          console.error("Cashfree response:", res);
+          console.error(
+            "Cashfree session missing. Inspect the sanitized API response above.",
+          );
+
           throw new Error(
-            "Cashfree payment session ID not received. Check backend response.",
+            "Payment session missing. Check the booking API response and backend Cashfree logs.",
           );
         }
 
+        // ------------------------------------------------------
+        // STEP C: INITIALIZE CASHFREE SDK
+        // ------------------------------------------------------
+        console.log("8. Initializing Cashfree SDK...");
+
         const cashfree = await load({
-          mode:
-            process.env.NEXT_PUBLIC_CASHFREE_ENV === "PRODUCTION"
-              ? "production"
-              : "sandbox",
+          mode: cashfreeMode,
         });
 
         if (!cashfree) {
-          throw new Error("Cashfree checkout could not be initialized");
+          throw new Error(
+            `Cashfree SDK initialization failed in ${cashfreeMode} mode`,
+          );
         }
+
+        console.log("9. Cashfree SDK initialized:", {
+          checkoutAvailable: typeof cashfree.checkout === "function",
+          mode: cashfreeMode,
+        });
+
+        // ------------------------------------------------------
+        // STEP D: OPEN CHECKOUT
+        // ------------------------------------------------------
+        console.log("10. Opening Cashfree checkout...");
 
         const checkoutResult = await cashfree.checkout({
           paymentSessionId,
           redirectTarget: "_self",
         });
 
-        // Cashfree normally redirects the user to its checkout.
-        // If checkout returns an error, show it instead of silently continuing.
+        console.log("11. Cashfree checkout result:", {
+          hasResult: Boolean(checkoutResult),
+          hasError: Boolean(checkoutResult?.error),
+          errorType: checkoutResult?.error?.type,
+          errorCode: checkoutResult?.error?.code,
+          errorMessage: checkoutResult?.error?.message,
+          redirect: checkoutResult?.redirect,
+        });
+
         if (checkoutResult?.error) {
           throw new Error(
-            checkoutResult.error.message || "Unable to open Cashfree checkout",
+            checkoutResult.error.message ||
+              "Cashfree checkout returned an error",
           );
         }
+
+        console.log(
+          "12. Checkout returned without an explicit error. Check whether Cashfree redirected the page.",
+        );
 
         return;
       }
     } catch (error) {
-      console.error("Booking Error:", error);
-      alert(error?.message || "Booking failed. Please try again.");
+      console.error(`[${debugId}] BOOKING / CASHFREE FAILURE`, {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+      });
+
+      alert(
+        `[${debugId}] ${error?.message || "Booking failed. Please try again."}`,
+      );
+    } finally {
+      console.groupEnd();
     }
   };
 

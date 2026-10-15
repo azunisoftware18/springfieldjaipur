@@ -1,5 +1,3 @@
-
-
 import prisma from "../db/db.js";
 import crypto from "node:crypto";
 import QRCode from "qrcode";
@@ -57,14 +55,16 @@ class BookingService {
       throw ApiError.badRequest("Invalid payment method");
     }
 
-
     // Guest user ke liye ONLY ONLINE allowed
     if (!user?.id && paymentMethod !== "ONLINE") {
       throw ApiError.unauthorized("Guest users can only use Online payment");
     }
 
     // Logged-in user CASH/UPI use kar sakta hai
-    if (user?.id && !["CASH", "UPI", "ONLINE", "FREE"].includes(paymentMethod)) {
+    if (
+      user?.id &&
+      !["CASH", "UPI", "ONLINE", "FREE"].includes(paymentMethod)
+    ) {
       throw ApiError.badRequest(
         "Logged-in users can only use Cash or UPI payment"
       );
@@ -303,7 +303,11 @@ class BookingService {
     // ============================================================
     // Logged-in user ke CASH / UPI booking ko direct complete karo.
 
-    if (paymentMethod === "CASH" || paymentMethod === "UPI" || paymentMethod === "FREE") {
+    if (
+      paymentMethod === "CASH" ||
+      paymentMethod === "UPI" ||
+      paymentMethod === "FREE"
+    ) {
       const completedBooking = await this.completeBooking(booking.id, null);
 
       return {
@@ -318,111 +322,252 @@ class BookingService {
     // ONLINE → EASEBUZZ
     // ============================================================
 
-   
-if (paymentMethod === "ONLINE") {
-  try {
-    const orderRequest = {
-      order_id: booking.txnId,
-      order_amount: Number(booking.totalAmount.toFixed(2)),
-      order_currency: "INR",
+    // if (paymentMethod === "ONLINE") {
+    //   try {
+    //     const orderRequest = {
+    //       order_id: booking.txnId,
+    //       order_amount: Number(booking.totalAmount.toFixed(2)),
+    //       order_currency: "INR",
 
-      customer_details: {
-        customer_id: user?.id
-          ? String(user.id)
-          : `guest_${booking.id}`,
+    //       customer_details: {
+    //         customer_id: user?.id
+    //           ? String(user.id)
+    //           : `guest_${booking.id}`,
 
-        customer_name: name,
-        customer_email: email,
-        customer_phone: phone,
-      },
+    //         customer_name: name,
+    //         customer_email: email,
+    //         customer_phone: phone,
+    //       },
 
-      order_meta: {
-        return_url:
-          `${envConfig.FRONTEND_URL}/payment-success/return` +
-          `?order_id=${booking.txnId}`,
-      },
+    //       order_meta: {
+    //         return_url:
+    //           `${envConfig.FRONTEND_URL}/payment-success/return` +
+    //           `?order_id=${booking.txnId}`,
+    //       },
 
-      order_note: `Ticket booking ${booking.id}`,
-    };
+    //       order_note: `Ticket booking ${booking.id}`,
+    //     };
 
-    const response = await cashfree.PGCreateOrder(orderRequest);
-    const cashfreeOrder = response.data;
+    //     const response = await cashfree.PGCreateOrder(orderRequest);
+    //     const cashfreeOrder = response.data;
 
-    return {
-      booking,
-      isCashBooking: false,
-      isOnlinePayment: true,
-      payment: {
-        provider: "CASHFREE",
-        orderId: cashfreeOrder.order_id,
-        paymentSessionId: cashfreeOrder.payment_session_id,
-        amount: booking.totalAmount,
-        currency: "INR",
-      },
-    };
-  } catch (error) {
-    console.error(
-      "Cashfree order creation failed:",
-      error.response?.data || error.message
+    //     return {
+    //       booking,
+    //       isCashBooking: false,
+    //       isOnlinePayment: true,
+    //       payment: {
+    //         provider: "CASHFREE",
+    //         orderId: cashfreeOrder.order_id,
+    //         paymentSessionId: cashfreeOrder.payment_session_id,
+    //         amount: booking.totalAmount,
+    //         currency: "INR",
+    //       },
+    //     };
+    //   } catch (error) {
+    //     console.error(
+    //       "Cashfree order creation failed:",
+    //       error.response?.data || error.message
+    //     );
+
+    //     // Booking ko unpaid hi rakhein.
+    //     throw ApiError.badRequest(
+    //       "Unable to initialize online payment. Please try again."
+    //     );
+    //   }
+    // }
+    //   }
+
+    if (paymentMethod === "ONLINE") {
+      const requestId = crypto.randomUUID();
+
+      try {
+        // Check required configuration without exposing credentials.
+        const frontendUrl = envConfig.FRONTEND_URL;
+
+        console.info("[CASHFREE][CREATE_ORDER][START]", {
+          requestId,
+          environment: process.env.NODE_ENV,
+          bookingId: booking.id,
+          txnId: booking.txnId,
+          paymentMethod: booking.paymentMethod,
+          bookingStatus: booking.status,
+          amount: Number(booking.totalAmount),
+          currency: "INR",
+          hasFrontendUrl: Boolean(frontendUrl),
+          hasCashfreeClientId: Boolean(process.env.CASHFREE_CLIENT_ID),
+          hasCashfreeClientSecret: Boolean(process.env.CASHFREE_CLIENT_SECRET),
+          timestamp: new Date().toISOString(),
+        });
+
+        if (!frontendUrl) {
+          throw new Error("FRONTEND_URL is missing");
+        }
+
+        const returnUrl = new URL("/payment-success/return", frontendUrl);
+
+        returnUrl.searchParams.set("order_id", booking.txnId);
+
+        const orderRequest = {
+          order_id: booking.txnId,
+          order_amount: Number(Number(booking.totalAmount).toFixed(2)),
+          order_currency: "INR",
+
+          customer_details: {
+            customer_id: user?.id ? String(user.id) : `guest_${booking.id}`,
+            customer_name: name,
+            customer_email: email,
+            customer_phone: String(phone),
+          },
+
+          order_meta: {
+            return_url: returnUrl.toString(),
+          },
+
+          order_note: `Ticket booking ${booking.id}`,
+        };
+
+        console.info("[CASHFREE][CREATE_ORDER][REQUEST]", {
+          requestId,
+          orderId: orderRequest.order_id,
+          amount: orderRequest.order_amount,
+          currency: orderRequest.order_currency,
+          returnUrlOrigin: returnUrl.origin,
+          returnUrlPath: returnUrl.pathname,
+          customerIdPresent: Boolean(orderRequest.customer_details.customer_id),
+          customerNamePresent: Boolean(name),
+          customerEmailPresent: Boolean(email),
+          customerPhoneLength: String(phone).length,
+        });
+
+        const response = await cashfree.PGCreateOrder(orderRequest);
+
+        const cashfreeOrder = response?.data;
+
+        console.info("[CASHFREE][CREATE_ORDER][RESPONSE]", {
+          requestId,
+          httpStatus: response?.status,
+          orderId: cashfreeOrder?.order_id,
+          orderStatus: cashfreeOrder?.order_status,
+          hasPaymentSessionId: Boolean(cashfreeOrder?.payment_session_id),
+          responseTimestamp: new Date().toISOString(),
+        });
+
+        if (!cashfreeOrder?.order_id || !cashfreeOrder?.payment_session_id) {
+          console.error("[CASHFREE][CREATE_ORDER][INVALID_RESPONSE]", {
+            requestId,
+            httpStatus: response?.status,
+            responseKeys: Object.keys(cashfreeOrder || {}),
+          });
+
+          throw new Error(
+            "Cashfree did not return order ID or payment session ID"
+          );
+        }
+
+        if (cashfreeOrder.order_id !== booking.txnId) {
+          console.error("[CASHFREE][CREATE_ORDER][ORDER_MISMATCH]", {
+            requestId,
+            expectedOrderId: booking.txnId,
+            receivedOrderId: cashfreeOrder.order_id,
+          });
+
+          throw new Error("Cashfree returned a different order ID");
+        }
+
+        console.info("[CASHFREE][CREATE_ORDER][SUCCESS]", {
+          requestId,
+          bookingId: booking.id,
+          orderId: cashfreeOrder.order_id,
+        });
+
+        return {
+          booking,
+          isCashBooking: false,
+          isOnlinePayment: true,
+          payment: {
+            provider: "CASHFREE",
+            orderId: cashfreeOrder.order_id,
+            paymentSessionId: cashfreeOrder.payment_session_id,
+            amount: Number(booking.totalAmount),
+            currency: "INR",
+          },
+        };
+      } catch (error) {
+        // Log provider diagnostics, but NEVER log credentials or full request data.
+        console.error("[CASHFREE][CREATE_ORDER][FAILED]", {
+          requestId,
+          bookingId: booking.id,
+          orderId: booking.txnId,
+          errorName: error?.name,
+          errorMessage: error?.message,
+          httpStatus:
+            error?.response?.status ??
+            error?.status ??
+            error?.statusCode ??
+            null,
+          providerCode:
+            error?.response?.data?.code ?? error?.response?.data?.type ?? null,
+          providerMessage:
+            error?.response?.data?.message ??
+            error?.response?.data?.message_description ??
+            error?.response?.data?.error ??
+            null,
+          providerResponse: error?.response?.data ?? null,
+          timestamp: new Date().toISOString(),
+        });
+
+        throw ApiError.badRequest(
+          "Unable to initialize online payment. Please try again."
+        );
+      }
+    }
+  }
+  static async verifyCashfreePayment(orderId) {
+    if (!orderId) {
+      throw ApiError.badRequest("Cashfree order ID is required");
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { txnId: orderId },
+    });
+
+    if (!booking) {
+      throw ApiError.notFound("Booking not found");
+    }
+
+    // Idempotency: already completed booking return karein.
+    if (booking.status === "PAID" && booking.ticketPdfUrl) {
+      return booking;
+    }
+
+    const response = await cashfree.PGFetchOrder(orderId);
+    const order = response.data;
+
+    // Verify order identity and amount.
+    if (
+      order.order_id !== booking.txnId ||
+      Number(order.order_amount) !==
+        Number(Number(booking.totalAmount).toFixed(2))
+    ) {
+      throw ApiError.badRequest("Cashfree order details do not match booking");
+    }
+
+    // Cashfree ka server-side status hi authoritative hai.
+    if (order.order_status !== "PAID") {
+      return {
+        success: false,
+        message: "Payment is not completed yet",
+        status: order.order_status,
+        bookingId: booking.id,
+      };
+    }
+
+    // Existing PDF, QR, email aur WhatsApp workflow reuse hoga.
+    return await this.completeBooking(
+      booking.id,
+      order.cf_order_id ? String(order.cf_order_id) : orderId
     );
-
-    // Booking ko unpaid hi rakhein.
-    throw ApiError.badRequest(
-      "Unable to initialize online payment. Please try again."
-    );
   }
-}
-  }
-
-  
-static async verifyCashfreePayment(orderId) {
-  if (!orderId) {
-    throw ApiError.badRequest("Cashfree order ID is required");
-  }
-
-  const booking = await prisma.booking.findUnique({
-    where: { txnId: orderId },
-  });
-
-  if (!booking) {
-    throw ApiError.notFound("Booking not found");
-  }
-
-  // Idempotency: already completed booking return karein.
-  if (booking.status === "PAID" && booking.ticketPdfUrl) {
-    return booking;
-  }
-
-  const response = await cashfree.PGFetchOrder(orderId);
-  const order = response.data;
-
-  // Verify order identity and amount.
-  if (
-    order.order_id !== booking.txnId ||
-    Number(order.order_amount) !==
-      Number(Number(booking.totalAmount).toFixed(2))
-  ) {
-    throw ApiError.badRequest(
-      "Cashfree order details do not match booking"
-    );
-  }
-
-  // Cashfree ka server-side status hi authoritative hai.
-  if (order.order_status !== "PAID") {
-    return {
-      success: false,
-      message: "Payment is not completed yet",
-      status: order.order_status,
-      bookingId: booking.id,
-    };
-  }
-
-  // Existing PDF, QR, email aur WhatsApp workflow reuse hoga.
-  return await this.completeBooking(
-    booking.id,
-    order.cf_order_id ? String(order.cf_order_id) : orderId
-  );
-}
 
   // ============================================================
   // COMPLETE BOOKING
@@ -620,38 +765,38 @@ We can't wait to welcome you! 🎉`;
     const booking = await prisma.booking.findUnique({
       where: { txnId: data.txnid },
     });
-  
+
     if (!booking) throw ApiError.notFound("Booking not found");
-  
+
     if (!this.verifyHash(data)) {
       throw ApiError.badRequest("Invalid payment");
     }
-  
+
     if (!data.status || data.status.toLowerCase() !== "success") {
       throw ApiError.badRequest("Payment failed");
     }
-  
+
     return await this.completeBooking(booking.id, data.easepayid || null);
   }
 
   // ============================================================
   // PAYMENT FAILURE (Commented — ab use nahi ho raha)
   // ============================================================
-  
+
   static async paymentFailure(data) {
     const booking = await prisma.booking.findUnique({
       where: { txnId: data.txnid },
     });
-  
+
     if (!booking) throw ApiError.notFound("Booking not found");
-  
+
     if (booking.status !== "PENDING") return booking;
-  
+
     await prisma.booking.update({
       where: { txnId: data.txnid },
       data: { status: "FAILED" },
     });
-  
+
     return true;
   }
 
@@ -735,11 +880,11 @@ We can't wait to welcome you! 🎉`;
   static verifyHash(data) {
     const salt = envConfig.EASEBUZZ_SALT;
     const key = envConfig.EASEBUZZ_KEY;
-  
+
     const str = `${salt}|${data.status}|||||||||||${data.email}|${data.firstname}|${data.productinfo}|${data.amount}|${data.txnid}|${key}`;
-  
+
     const hash = crypto.createHash("sha512").update(str).digest("hex");
-  
+
     return hash === data.hash;
   }
 
