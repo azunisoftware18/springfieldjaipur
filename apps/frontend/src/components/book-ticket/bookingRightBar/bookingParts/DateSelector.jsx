@@ -155,26 +155,27 @@ export default function DateSelector({ onNext }) {
     const dispatch = useDispatch();
     const { placeId } = usePlace();
 
-    // 1. Calculate default date (16th of current month)
+    // Default date: 16th of the current month
     const defaultDate = useMemo(() => {
         const date = new Date();
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
+
         return `${year}-${month}-16`;
     }, []);
 
     const today = new Date().toISOString().split("T")[0];
+
     const selectedDate = useSelector((state) => state.booking.date);
     const selectedSlot = useSelector((state) => state.booking.slot);
 
-    // 2. Set default date on mount if no date is selected OR if current date is selected
+    // Set default date if no date is selected
     useEffect(() => {
-        // Agar Redux mein koi date nahi hai, ya current date hai, toh 16th set karo
-        if (!selectedDate || selectedDate === today) {
+        if (!selectedDate) {
             dispatch(setDate(defaultDate));
             dispatch(setSlot(null));
         }
-    }, [selectedDate, defaultDate, today, dispatch]);
+    }, [selectedDate, defaultDate, dispatch]);
 
     const { data: slots = [], isLoading } = useSlots({
         placeId,
@@ -187,49 +188,48 @@ export default function DateSelector({ onNext }) {
             dispatch(setSlot(null));
             return;
         }
-        const formattedDate = date.toISOString().split("T")[0];
+
+        // Local date formatting avoids UTC date shifting
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+
+        const formattedDate = `${year}-${month}-${day}`;
+
         dispatch(setDate(formattedDate));
         dispatch(setSlot(null));
     };
 
+    // Allow any date from today onwards
     const isDateAllowed = (date) => {
-        const day = date.getDate();
-        return day === 16 || day === 17;
-    };
-
-    const processSlotsWithTimeCheck = () => {
-        if (!slots || !Array.isArray(slots) || slots.length === 0) return [];
-
-        const sortedSlots = [...slots].sort((a, b) =>
-            a.time.localeCompare(b.time)
+        const selected = new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate()
         );
 
-        const isTodaySelected = selectedDate === today;
+        const current = new Date();
+        current.setHours(0, 0, 0, 0);
 
-        return sortedSlots.map((slot) => {
-            let uiStatus = slot.status;
-
-            if (isTodaySelected) {
-                const now = new Date();
-                const [h, m] = slot.time.split(":").map(Number);
-
-                const slotTime = new Date();
-                slotTime.setHours(h, m, 0, 0);
-
-                if (slotTime <= now) {
-                    uiStatus = "expired";
-                }
-            }
-
-            return {
-                ...slot,
-                uiStatus,
-                isAvailable: uiStatus === "available",
-            };
-        });
+        return selected >= current;
     };
 
-    const validatedSlots = processSlotsWithTimeCheck() || [];
+    // Do not automatically expire slots based on their time
+    const processSlots = () => {
+        if (!Array.isArray(slots) || slots.length === 0) {
+            return [];
+        }
+
+        return [...slots]
+            .sort((a, b) => a.time.localeCompare(b.time))
+            .map((slot) => ({
+                ...slot,
+                uiStatus: slot.status,
+                isAvailable: slot.status === "available",
+            }));
+    };
+
+    const validatedSlots = processSlots();
 
     if (!placeId) {
         return (
@@ -242,7 +242,9 @@ export default function DateSelector({ onNext }) {
     return (
         <>
             <AnimatePresence mode="wait">
-                {isLoading && <FullPageLoader message="Fetching Imperial Hours..." />}
+                {isLoading && (
+                    <FullPageLoader message="Fetching Imperial Hours..." />
+                )}
             </AnimatePresence>
 
             <motion.div
@@ -256,16 +258,22 @@ export default function DateSelector({ onNext }) {
                         <h2 className="text-xl sm:text-2xl font-serif font-bold text-royal-blue leading-tight">
                             Plan Your Visit
                         </h2>
+
                         <div className="h-[1px] w-12 bg-gold/40" />
                     </div>
 
                     <div className="relative mt-1">
                         <DatePicker
-                            selected={selectedDate ? new Date(selectedDate) : null}
+                            selected={
+                                selectedDate
+                                    ? new Date(`${selectedDate}T12:00:00`)
+                                    : null
+                            }
                             onChange={handleDateChange}
                             filterDate={isDateAllowed}
                             minDate={new Date()}
-                            placeholderText="Select date (16th or 17th)"
+                            placeholderText="Select date"
+                            dateFormat="dd/MM/yyyy"
                             className="w-full p-3.5 border border-gold/20 rounded-xl outline-none font-serif text-royal-blue bg-sandstone/10 focus:border-gold/50 focus:bg-white transition-all text-xs font-medium cursor-pointer shadow-inner"
                             wrapperClassName="w-full"
                         />
@@ -298,15 +306,17 @@ export default function DateSelector({ onNext }) {
                         whileTap={selectedSlot ? { scale: 0.99 } : {}}
                         disabled={!selectedSlot}
                         onClick={onNext}
-                        className={`w-full py-4 px-3 rounded-xl font-serif text-xs font-bold tracking-[3px] transition-all duration-300 uppercase border block mb-5
-                            ${
-                                !selectedSlot
-                                    ? "bg-sandstone/40 text-gray-400 cursor-not-allowed border-gray-200/50"
-                                    : "bg-gradient-to-r from-jaipur-dark to-[#994113] text-white border-gold/30 cursor-pointer shadow-md shadow-jaipur-dark/5"
-                            }`}
+                        className={`w-full py-4 px-3 rounded-xl font-serif text-xs font-bold tracking-[3px] transition-all duration-300 uppercase border block mb-5 ${
+                            !selectedSlot
+                                ? "bg-sandstone/40 text-gray-400 cursor-not-allowed border-gray-200/50"
+                                : "bg-gradient-to-r from-jaipur-dark to-[#994113] text-white border-gold/30 cursor-pointer shadow-md shadow-jaipur-dark/5"
+                        }`}
                     >
                         {selectedSlot
-                            ? `Confirm ${selectedSlot.displayTime || selectedSlot.time} Entry ⟶`
+                            ? `Confirm ${
+                                  selectedSlot.displayTime ||
+                                  selectedSlot.time
+                              } Entry ⟶`
                             : "SELECT TIMING AT GATE"}
                     </motion.button>
                 </div>
